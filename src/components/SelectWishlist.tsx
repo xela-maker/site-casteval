@@ -3,14 +3,16 @@ import { X, Heart, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useSelectWishlist } from "@/hooks/useSelectWishlist";
+import { useWhatsAppIntegration } from "@/hooks/useWhatsAppIntegration";
 
 export const SelectWishlist = () => {
   const [isOpen, setIsOpen] = useState(false);
   const { wishlist, removeFromWishlist } = useSelectWishlist();
+  const { open } = useWhatsAppIntegration();
 
   const openWhatsApp = (projectName: string) => {
     const message = `Tenho interesse no empreendimento ${projectName} da linha Casteval Select`;
-    window.open(`https://wa.me/5541999999999?text=${encodeURIComponent(message)}`, '_blank');
+    open(message);
   };
 
   return (

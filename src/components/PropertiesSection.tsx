@@ -2,13 +2,14 @@ import { PropertyCard } from "./PropertyCard";
 import { Button } from "@/components/ui/button";
 import { MessageCircle } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useWhatsAppIntegration } from "@/hooks/useWhatsAppIntegration";
 import property1 from "@/assets/property-1.jpg";
 
 export const PropertiesSection = () => {
+  const { openGeneral } = useWhatsAppIntegration();
+
   const openWhatsApp = () => {
-    const message = "Olá! Gostaria de conhecer mais sobre os empreendimentos da Casteval.";
-    const phoneNumber = "5541999999999";
-    window.open(`https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`, '_blank');
+    openGeneral();
   };
 
   const properties = [

@@ -2,13 +2,15 @@ import { X, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useSelectComparator } from "@/hooks/useSelectComparator";
+import { useWhatsAppIntegration } from "@/hooks/useWhatsAppIntegration";
 
 export const SelectComparator = () => {
   const { comparison, isOpen, closeComparator, clearComparison } = useSelectComparator();
+  const { open } = useWhatsAppIntegration();
 
   const openWhatsApp = (projectName: string) => {
     const message = `Tenho interesse no empreendimento ${projectName} da linha Casteval Select`;
-    window.open(`https://wa.me/5541999999999?text=${encodeURIComponent(message)}`, '_blank');
+    open(message);
   };
 
   return (

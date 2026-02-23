@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { AdminPreferencesProvider } from "@/contexts/AdminPreferencesContext";
 import { ScrollToTop } from "@/components/ScrollToTop";
+import { TrackingScripts } from "@/components/TrackingScripts";
 import Index from "./pages/Index";
 import Empreendimentos from "./pages/Empreendimentos";
 import EmpreendimentoDetalhes from "./pages/EmpreendimentoDetalhes";
@@ -52,6 +53,7 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <BrowserRouter>
       <ScrollToTop />
+      <TrackingScripts />
       <AuthProvider>
         <TooltipProvider>
           <Toaster />

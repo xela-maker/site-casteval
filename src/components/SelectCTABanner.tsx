@@ -1,12 +1,15 @@
 import { Button } from "@/components/ui/button";
+import { useWhatsAppIntegration } from "@/hooks/useWhatsAppIntegration";
 
 export const SelectCTABanner = () => {
+  const { open } = useWhatsAppIntegration();
+
   const openSelectConsultor = () => {
-    window.open('https://wa.me/5541999999999?text=Tenho interesse na linha Casteval Select', '_blank');
+    open('Tenho interesse na linha Casteval Select');
   };
 
   const scheduleExclusiveVisit = () => {
-    window.open('https://wa.me/5541999999999?text=Gostaria de agendar uma visita exclusiva Select', '_blank');
+    open('Gostaria de agendar uma visita exclusiva Select');
   };
 
   return (

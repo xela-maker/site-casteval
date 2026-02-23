@@ -19,6 +19,7 @@ import {
 import * as LucideIcons from "lucide-react";
 import { getImageUrl, getImageAlt } from '@/lib/imageUtils';
 import { useSwipeGesture } from "@/hooks/useSwipeGesture";
+import { useWhatsAppIntegration } from "@/hooks/useWhatsAppIntegration";
 
 interface CasaDetalhesBaseProps {
   casa: any;
@@ -58,6 +59,8 @@ export function CasaDetalhesBase({
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [hoveredCard, setHoveredCard] = useState<string | null>(null);
   const [hoveredImage, setHoveredImage] = useState<number | null>(null);
+
+  const { phoneNumber, openForProperty, openForVisit } = useWhatsAppIntegration();
 
   const images = Array.isArray(casa.galeria) ? casa.galeria : [];
 
@@ -719,12 +722,7 @@ export function CasaDetalhesBase({
                   </h3>
                   <button
                     style={buttonPrimaryStyle}
-                    onClick={() =>
-                      window.open(
-                        `https://wa.me/5511999999999?text=Olá! Tenho interesse no imóvel ${casa.nome}`,
-                        "_blank",
-                      )
-                    }
+                    onClick={() => openForProperty(casa.nome)}
                   >
                     <MessageCircle style={{ width: "18px", height: "18px" }} />
                     Tenho Interesse
@@ -732,12 +730,7 @@ export function CasaDetalhesBase({
 
                   <button
                     style={{ ...buttonOutlineStyle, marginTop: "12px" }}
-                    onClick={() =>
-                      window.open(
-                        `https://wa.me/5511999999999?text=Olá! Gostaria de agendar uma visita ao imóvel ${casa.nome}`,
-                        "_blank",
-                      )
-                    }
+                    onClick={() => openForVisit(casa.nome)}
                   >
                     <Calendar style={{ width: "18px", height: "18px" }} />
                     Agendar Visita
@@ -836,12 +829,7 @@ export function CasaDetalhesBase({
                       e.currentTarget.style.transform = "translateY(0)";
                       e.currentTarget.style.boxShadow = "none";
                     }}
-                    onClick={() =>
-                      window.open(
-                        `https://wa.me/5511999999999?text=Olá! Tenho interesse no imóvel ${casa.nome}`,
-                        "_blank",
-                      )
-                    }
+                    onClick={() => openForProperty(casa.nome)}
                   >
                     <MessageCircle style={{ width: "20px", height: "20px" }} />
                     Tenho Interesse
@@ -857,12 +845,7 @@ export function CasaDetalhesBase({
                       e.currentTarget.style.background = "transparent";
                       e.currentTarget.style.color = "#C9A961";
                     }}
-                    onClick={() =>
-                      window.open(
-                        `https://wa.me/5511999999999?text=Olá! Gostaria de agendar uma visita ao imóvel ${casa.nome}`,
-                        "_blank",
-                      )
-                    }
+                    onClick={() => openForVisit(casa.nome)}
                   >
                     <Calendar style={{ width: "20px", height: "20px" }} />
                     Agendar Visita

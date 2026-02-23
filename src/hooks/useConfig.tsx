@@ -32,6 +32,10 @@ export interface SiteConfig {
   site_description_default?: string;
   site_keywords_default?: string;
   google_analytics_id?: string;
+  gtm_container_id?: string;
+  meta_pixel_id?: string;
+  custom_head_scripts?: string;
+  custom_body_scripts?: string;
   
   // WhatsApp
   whatsapp_numero?: string;

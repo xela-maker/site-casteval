@@ -3,11 +3,13 @@ import { ArrowRight, Heart, Plus, MapPin, Calculator } from "lucide-react";
 import { useSelectWishlist } from "@/hooks/useSelectWishlist";
 import { useSelectComparator } from "@/hooks/useSelectComparator";
 import { useSelectCasas } from "@/hooks/useSelectCasas";
+import { useWhatsAppIntegration } from "@/hooks/useWhatsAppIntegration";
 import { useState } from "react";
 
 export const SelectShowcase = () => {
   const { toggleWishlist, isInWishlist } = useSelectWishlist();
   const { toggleComparison, isInComparison, comparison, openComparator } = useSelectComparator();
+  const { open } = useWhatsAppIntegration();
   const [showLocationMap, setShowLocationMap] = useState<string | null>(null);
   const [showCalculator, setShowCalculator] = useState<string | null>(null);
   
@@ -33,7 +35,7 @@ export const SelectShowcase = () => {
 
   const openWhatsApp = (projectName: string) => {
     const message = `Tenho interesse no imóvel ${projectName} da linha Casteval Select`;
-    window.open(`https://wa.me/5541999999999?text=${encodeURIComponent(message)}`, '_blank');
+    open(message);
   };
 
   if (selectProjects.length === 0) {

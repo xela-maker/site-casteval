@@ -6,7 +6,7 @@ import { WhatsAppFAB } from "@/components/WhatsAppFAB";
 import { SEOHead } from "@/components/SEOHead";
 import { LazyImage } from "@/components/LazyImage";
 import { EmpreendimentoDetailsSkeleton } from "@/components/EmpreendimentoDetailsSkeleton";
-import { WhatsAppIntegration } from "@/components/WhatsAppIntegration";
+import { useWhatsAppIntegration } from "@/hooks/useWhatsAppIntegration";
 import { useEmpreendimento } from "@/hooks/useEmpreendimentos";
 import { useItensLazerWithIcons } from "@/hooks/useItensLazerWithIcons";
 import { createEmpreendimentoSchema } from "@/lib/structuredData";
@@ -560,6 +560,7 @@ export default function EmpreendimentoDetalhes() {
   const [currentInfoIndex, setCurrentInfoIndex] = useState(0);
   const amenidadeIds = result?.amenidades || [];
   const { data: itensLazerWithIcons = [] } = useItensLazerWithIcons(amenidadeIds);
+  const { openForProperty } = useWhatsAppIntegration();
 
   // auto-slide somente em telas menores - SEMPRE chamar hooks antes dos early returns
   useEffect(() => {
@@ -1538,7 +1539,7 @@ export default function EmpreendimentoDetalhes() {
 
                 <button
                   type="button"
-                  onClick={() => WhatsAppIntegration.openForProperty(empreendimento.nome)}
+                  onClick={() => openForProperty(empreendimento.nome)}
                   style={{
                     padding: "10px 32px",
                     backgroundColor: "#F5B321",
@@ -1824,7 +1825,7 @@ export default function EmpreendimentoDetalhes() {
                 cursor: "pointer",
                 color: "#000",
               }}
-              onClick={() => WhatsAppIntegration.openForProperty("Contato")}
+              onClick={() => openForProperty("Contato")}
             >
               Fale com nossos corretores
             </button>

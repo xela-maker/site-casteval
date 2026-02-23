@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { z } from 'zod';
+import { useConfig } from './useConfig';
 
 export const contactFormSchema = z.object({
   firstName: z.string()
@@ -30,6 +31,7 @@ export type ContactFormData = z.infer<typeof contactFormSchema>;
 export const useFormValidation = () => {
   const [errors, setErrors] = useState<Partial<Record<keyof ContactFormData, string>>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { data: config } = useConfig();
 
   const validateField = (name: keyof ContactFormData, value: string) => {
     try {
@@ -92,7 +94,7 @@ export const useFormValidation = () => {
 💬 Mensagem:
 ${data.message}`;
 
-      const phoneNumber = "5541999999999";
+      const phoneNumber = config?.whatsapp_numero || "5541999999999";
       window.open(`https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`, '_blank');
       
       return true;
