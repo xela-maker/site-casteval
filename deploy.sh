@@ -63,8 +63,8 @@ find . -mindepth 1 -maxdepth 1 \
   ! -name 'node_modules' \
   -exec rm -rf {} +
 
-echo ">> Copiando build para a raiz da deploy"
-cp -r "${TEMP_DIR}"/* .
+echo ">> Copiando build (incluindo .htaccess) para a raiz da deploy"
+cp -r "${TEMP_DIR}/." .
 
 git add .
 
