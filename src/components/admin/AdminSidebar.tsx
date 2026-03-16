@@ -13,6 +13,7 @@ import {
   LogOut,
   ChevronLeft,
   ChevronRight,
+  Code,
 } from "lucide-react";
 import { useState } from "react";
 
@@ -27,6 +28,7 @@ const menuItems = [
   { title: "Business", icon: Briefcase, path: "/admin/business" },
   { title: "Sobre Nós", icon: Users, path: "/admin/sobre-nos" },
   { title: "Usuários", icon: Users, path: "/admin/usuarios" },
+  { title: "SEO & Scripts", icon: Code, path: "/admin/seo-scripts" },
   { title: "Configurações", icon: Settings, path: "/admin/configuracoes" },
 ];
 
