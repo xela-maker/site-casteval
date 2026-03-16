@@ -211,6 +211,17 @@
   border-color: hsl(var(--admin-brand));
 }
 
+.admin-btn-danger {
+  background: hsl(var(--admin-danger));
+  color: #fff;
+}
+
+.admin-btn-danger:hover:not(:disabled) {
+  background: hsl(var(--admin-danger) / 0.9);
+  box-shadow: 0 4px 8px hsla(var(--admin-danger), 0.4);
+  transform: translateY(-1px);
+}
+
 .admin-btn-outline {
   background: transparent;
   color: hsl(var(--admin-text));

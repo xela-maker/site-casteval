@@ -39,6 +39,7 @@ import SelectAdmin from "./pages/admin/Select";
 import BusinessAdmin from "./pages/admin/Business";
 import SobreNosAdmin from "./pages/admin/SobreNos";
 import Configuracoes from "./pages/admin/Configuracoes";
+import SeoScripts from "./pages/admin/SeoScripts";
 import Perfil from "./pages/admin/Perfil";
 import Preferencias from "./pages/admin/Preferencias";
 import SelectCasaForm from "./pages/admin/SelectCasaForm";
@@ -109,6 +110,7 @@ const App = () => (
                 <Route path="banners/:id" element={<BannerForm />} />
                 <Route path="sobre-nos" element={<SobreNosAdmin />} />
                 <Route path="configuracoes" element={<Configuracoes />} />
+                <Route path="seo-scripts" element={<SeoScripts />} />
                 <Route path="perfil" element={<Perfil />} />
                 <Route path="preferencias" element={<Preferencias />} />
                 <Route path="usuarios" element={<Usuarios />} />

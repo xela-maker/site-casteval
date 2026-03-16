@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { useConfig } from '@/hooks/useConfig';
 
 interface SEOHeadProps {
   title?: string;
@@ -12,36 +13,54 @@ interface SEOHeadProps {
 }
 
 export const SEOHead = ({
-  title = "Casteval - Sofisticação e Exclusividade em Empreendimentos",
-  description = "Descubra empreendimentos exclusivos da Casteval. Arquitetura autoral, localizações nobres e atendimento personalizado. Casteval Select e Business.",
-  keywords = "casteval, empreendimentos, imóveis, curitiba, são paulo, casteval select, casteval business, arquitetura, exclusividade, sofisticação",
+  title,
+  description,
+  keywords,
   ogImage = "/hero-house.jpg",
   ogType = "website",
   canonical,
   structuredData,
   preloadImages = []
 }: SEOHeadProps) => {
-  
+  const { data: config } = useConfig();
+
+  const finalTitle =
+    title ||
+    config?.site_title_default ||
+    "Casteval - Sofisticação e Exclusividade em Empreendimentos";
+
+  const finalDescription =
+    description ||
+    config?.site_description_default ||
+    "Descubra empreendimentos exclusivos da Casteval. Arquitetura autoral, localizações nobres e atendimento personalizado. Casteval Select e Business.";
+
+  const finalKeywords =
+    keywords ||
+    config?.site_keywords_default ||
+    "casteval, empreendimentos, imóveis, curitiba, são paulo, casteval select, casteval business, arquitetura, exclusividade, sofisticação";
+
+  const finalAuthor = config?.site_author_default || "Casteval";
+
   useEffect(() => {
     // Update document title
-    document.title = title;
+    document.title = finalTitle;
     
     // Update meta tags
-    updateMetaTag('description', description);
-    updateMetaTag('keywords', keywords);
-    updateMetaTag('author', 'Casteval');
+    updateMetaTag('description', finalDescription);
+    updateMetaTag('keywords', finalKeywords);
+    updateMetaTag('author', finalAuthor);
     
     // Open Graph
-    updateMetaTag('og:title', title, 'property');
-    updateMetaTag('og:description', description, 'property');
+    updateMetaTag('og:title', finalTitle, 'property');
+    updateMetaTag('og:description', finalDescription, 'property');
     updateMetaTag('og:image', ogImage, 'property');
     updateMetaTag('og:type', ogType, 'property');
     updateMetaTag('og:site_name', 'Casteval', 'property');
     
     // Twitter Card
     updateMetaTag('twitter:card', 'summary_large_image');
-    updateMetaTag('twitter:title', title);
-    updateMetaTag('twitter:description', description);
+    updateMetaTag('twitter:title', finalTitle);
+    updateMetaTag('twitter:description', finalDescription);
     updateMetaTag('twitter:image', ogImage);
     
     // Canonical URL
@@ -61,7 +80,7 @@ export const SEOHead = ({
       }
     });
     
-  }, [title, description, keywords, ogImage, ogType, canonical, structuredData, preloadImages]);
+  }, [finalTitle, finalDescription, finalKeywords, finalAuthor, ogImage, ogType, canonical, structuredData, preloadImages]);
 
   const updateMetaTag = (name: string, content: string, property?: string) => {
     const selector = property ? `meta[property="${name}"]` : `meta[name="${name}"]`;

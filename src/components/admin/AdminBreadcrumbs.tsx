@@ -11,6 +11,7 @@ const breadcrumbMap: Record<string, string> = {
   business: 'Business',
   'sobre-nos': 'Sobre Nós',
   configuracoes: 'Configurações',
+  'seo-scripts': 'SEO & Scripts',
   new: 'Novo',
   edit: 'Editar',
 };
