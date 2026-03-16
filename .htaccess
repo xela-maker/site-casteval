@@ -1,0 +1,12 @@
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+
+  # Garante que assets existentes (arquivos reais) continuem sendo servidos normalmente
+  RewriteCond %{REQUEST_FILENAME} -f [OR]
+  RewriteCond %{REQUEST_FILENAME} -d
+  RewriteRule ^ - [L]
+
+  # Todas as outras rotas (ex: /admin, /imoveis/123) caem no index.html do SPA
+  RewriteRule ^ index.html [L]
+</IfModule>
+
