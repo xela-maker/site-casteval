@@ -34,10 +34,15 @@ npm install
 echo ">> Gerando build (variáveis do .env são injetadas no bundle)"
 npm run build
 
-echo ">> Preparando arquivos temporários"
+echo ">> Preparando arquivos temporários (dist + .htaccess)"
 rm -rf "${TEMP_DIR}"
 mkdir -p "${TEMP_DIR}"
 cp -r dist/* "${TEMP_DIR}/"
+
+# Garante que o .htaccess da main seja levado para a branch deploy
+if [[ -f .htaccess ]]; then
+  cp .htaccess "${TEMP_DIR}/.htaccess"
+fi
 
 echo ">> Limpando dist local para permitir troca de branch"
 rm -rf dist
