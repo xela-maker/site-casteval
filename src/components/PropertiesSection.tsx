@@ -3,12 +3,14 @@ import { Button } from "@/components/ui/button";
 import { MessageCircle } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useWhatsAppIntegration } from "@/hooks/useWhatsAppIntegration";
+import { trackWhatsAppClick } from "@/utils/analytics";
 import property1 from "@/assets/property-1.jpg";
 
 export const PropertiesSection = () => {
   const { openGeneral } = useWhatsAppIntegration();
 
   const openWhatsApp = () => {
+    trackWhatsAppClick("properties_section_whatsapp");
     openGeneral();
   };
 

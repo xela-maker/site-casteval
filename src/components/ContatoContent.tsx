@@ -11,6 +11,7 @@ import { useFormValidation, ContactFormData } from "@/hooks/useFormValidation";
 import contatoHero from "@/assets/contato-hero.png";
 import { useConfig } from "@/hooks/useConfig";
 import { useWhatsAppIntegration } from "@/hooks/useWhatsAppIntegration";
+import { trackWhatsAppClick } from "@/utils/analytics";
 
 export const ContatoContent = () => {
   const { toast } = useToast();
@@ -263,7 +264,10 @@ export const ContatoContent = () => {
                       </div>
                     </div>
 
-                    <button onClick={() => whatsapp.openGeneral()} style={{
+                    <button onClick={() => {
+                    trackWhatsAppClick("contato_fale_conosco_whatsapp");
+                    whatsapp.openGeneral();
+                  }} style={{
                     marginTop: 20,
                     backgroundColor: "#25D366",
                     color: "#fff",
@@ -419,7 +423,10 @@ export const ContatoContent = () => {
                       Nossos especialistas estão prontos para ajudar você a encontrar o imóvel ideal.
                     </p>
 
-                    <button onClick={() => whatsapp.openConsultation()} style={{
+                    <button onClick={() => {
+                    trackWhatsAppClick("contato_corretor_whatsapp");
+                    whatsapp.openConsultation();
+                  }} style={{
                     backgroundColor: "#C5A139",
                     color: "#000",
                     fontWeight: 700,

@@ -20,6 +20,7 @@ import * as LucideIcons from "lucide-react";
 import { getImageUrl, getImageAlt } from '@/lib/imageUtils';
 import { useSwipeGesture } from "@/hooks/useSwipeGesture";
 import { useWhatsAppIntegration } from "@/hooks/useWhatsAppIntegration";
+import { trackWhatsAppClick } from "@/utils/analytics";
 
 interface CasaDetalhesBaseProps {
   casa: any;
@@ -722,7 +723,10 @@ export function CasaDetalhesBase({
                   </h3>
                   <button
                     style={buttonPrimaryStyle}
-                    onClick={() => openForProperty(casa.nome)}
+                    onClick={() => {
+                      trackWhatsAppClick("casa_detalhes_mobile_interesse");
+                      openForProperty(casa.nome);
+                    }}
                   >
                     <MessageCircle style={{ width: "18px", height: "18px" }} />
                     Tenho Interesse
@@ -730,7 +734,10 @@ export function CasaDetalhesBase({
 
                   <button
                     style={{ ...buttonOutlineStyle, marginTop: "12px" }}
-                    onClick={() => openForVisit(casa.nome)}
+                    onClick={() => {
+                      trackWhatsAppClick("casa_detalhes_mobile_visita");
+                      openForVisit(casa.nome);
+                    }}
                   >
                     <Calendar style={{ width: "18px", height: "18px" }} />
                     Agendar Visita
@@ -829,7 +836,10 @@ export function CasaDetalhesBase({
                       e.currentTarget.style.transform = "translateY(0)";
                       e.currentTarget.style.boxShadow = "none";
                     }}
-                    onClick={() => openForProperty(casa.nome)}
+                    onClick={() => {
+                      trackWhatsAppClick("casa_detalhes_desktop_interesse");
+                      openForProperty(casa.nome);
+                    }}
                   >
                     <MessageCircle style={{ width: "20px", height: "20px" }} />
                     Tenho Interesse
@@ -845,7 +855,10 @@ export function CasaDetalhesBase({
                       e.currentTarget.style.background = "transparent";
                       e.currentTarget.style.color = "#C9A961";
                     }}
-                    onClick={() => openForVisit(casa.nome)}
+                    onClick={() => {
+                      trackWhatsAppClick("casa_detalhes_desktop_visita");
+                      openForVisit(casa.nome);
+                    }}
                   >
                     <Calendar style={{ width: "20px", height: "20px" }} />
                     Agendar Visita

@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useSelectWishlist } from "@/hooks/useSelectWishlist";
 import { useWhatsAppIntegration } from "@/hooks/useWhatsAppIntegration";
+import { trackWhatsAppClick } from "@/utils/analytics";
 
 export const SelectWishlist = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -11,6 +12,7 @@ export const SelectWishlist = () => {
   const { open } = useWhatsAppIntegration();
 
   const openWhatsApp = (projectName: string) => {
+    trackWhatsAppClick("select_wishlist_whatsapp");
     const message = `Tenho interesse no empreendimento ${projectName} da linha Casteval Select`;
     open(message);
   };

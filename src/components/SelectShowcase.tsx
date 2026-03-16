@@ -4,6 +4,7 @@ import { useSelectWishlist } from "@/hooks/useSelectWishlist";
 import { useSelectComparator } from "@/hooks/useSelectComparator";
 import { useSelectCasas } from "@/hooks/useSelectCasas";
 import { useWhatsAppIntegration } from "@/hooks/useWhatsAppIntegration";
+import { trackWhatsAppClick } from "@/utils/analytics";
 import { useState } from "react";
 
 export const SelectShowcase = () => {
@@ -34,6 +35,7 @@ export const SelectShowcase = () => {
   }));
 
   const openWhatsApp = (projectName: string) => {
+    trackWhatsAppClick("select_showcase_whatsapp");
     const message = `Tenho interesse no imóvel ${projectName} da linha Casteval Select`;
     open(message);
   };

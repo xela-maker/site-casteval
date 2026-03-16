@@ -6,6 +6,7 @@ import { useScrolled } from "@/hooks/useScrolled";
 import { Link, useLocation } from "react-router-dom";
 import logo from "@/assets/casteval-logo-new.webp";
 import { useWhatsAppIntegration } from "@/hooks/useWhatsAppIntegration";
+import { trackWhatsAppClick } from "@/utils/analytics";
 
 export const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -100,7 +101,10 @@ export const Header = () => {
               <Button 
                 variant="default" 
                 size="sm"
-                onClick={() => whatsapp.openConsultation()}
+                onClick={() => {
+                  trackWhatsAppClick("header_desktop_consultation");
+                  whatsapp.openConsultation();
+                }}
                 className="text-[10px] font-bold tracking-button shadow-card-rest hover:shadow-card-hover transition-smooth px-6 py-3"
                 style={{
                   background: 'linear-gradient(135deg, hsl(var(--brand-gold)), hsl(var(--brand-gold-700)))',
@@ -185,10 +189,11 @@ export const Header = () => {
             >
               CONTATO
             </Link>
-            <Button 
+              <Button 
               variant="default" 
               size="pill"
               onClick={() => {
+                trackWhatsAppClick("header_mobile_consultation");
                 whatsapp.openConsultation();
                 toggleMenu();
               }}

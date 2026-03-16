@@ -3,12 +3,14 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useSelectComparator } from "@/hooks/useSelectComparator";
 import { useWhatsAppIntegration } from "@/hooks/useWhatsAppIntegration";
+import { trackWhatsAppClick } from "@/utils/analytics";
 
 export const SelectComparator = () => {
   const { comparison, isOpen, closeComparator, clearComparison } = useSelectComparator();
   const { open } = useWhatsAppIntegration();
 
   const openWhatsApp = (projectName: string) => {
+    trackWhatsAppClick("select_comparator_whatsapp");
     const message = `Tenho interesse no empreendimento ${projectName} da linha Casteval Select`;
     open(message);
   };
