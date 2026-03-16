@@ -28,12 +28,6 @@ echo ">> Indo para ${MAIN_BRANCH}"
 git checkout "${MAIN_BRANCH}"
 git pull origin "${MAIN_BRANCH}"
 
-echo ">> Validando .env (build injeta as variáveis no JS)"
-if [[ ! -f .env ]]; then
-  echo "Erro: .env não encontrado. Crie o arquivo com as variáveis necessárias para o Vite."
-  exit 1
-fi
-
 echo ">> Instalando dependências"
 npm install
 
