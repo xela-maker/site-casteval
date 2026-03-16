@@ -49,8 +49,14 @@ if git ls-remote --exit-code --heads origin "${DEPLOY_BRANCH}" >/dev/null 2>&1; 
   git pull origin "${DEPLOY_BRANCH}"
 fi
 
-echo ">> Limpando branch deploy (preserva .git, .gitignore, .env e node_modules para não perder ao voltar)"
-find . -mindepth 1 -maxdepth 1 ! -name '.git' ! -name '.gitignore' ! -name '.env' ! -name 'node_modules' -exec rm -rf {} +
+echo ">> Limpando branch deploy (preserva .git, .gitignore, .env, .htaccess e node_modules para não perder ao voltar)"
+find . -mindepth 1 -maxdepth 1 \
+  ! -name '.git' \
+  ! -name '.gitignore' \
+  ! -name '.env' \
+  ! -name '.htaccess' \
+  ! -name 'node_modules' \
+  -exec rm -rf {} +
 
 echo ">> Copiando build para a raiz da deploy"
 cp -r "${TEMP_DIR}"/* .
