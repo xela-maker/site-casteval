@@ -6,6 +6,31 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+const APP_ROLES = new Set(['admin', 'editor', 'user']);
+
+function normalizeEmail(raw: unknown): string {
+  const s = typeof raw === 'string' ? raw.trim().toLowerCase() : '';
+  return s;
+}
+
+function isValidEmail(email: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+/** Roles válidas para enum `app_role` (dedupe + ordem estável). */
+function normalizeAppRoles(raw: unknown): string[] {
+  if (!Array.isArray(raw)) return [];
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const r of raw) {
+    const v = String(r ?? '').trim().toLowerCase();
+    if (!APP_ROLES.has(v) || seen.has(v)) continue;
+    seen.add(v);
+    out.push(v);
+  }
+  return out;
+}
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -71,17 +96,24 @@ serve(async (req) => {
 
     switch (action) {
       case 'invite': {
-        const { email, fullName, password, roles, inviteKind } = body;
+        const { email: rawEmail, fullName, password, roles, inviteKind } = body;
         const directoryOnly = inviteKind === 'directory';
+        const email = normalizeEmail(rawEmail);
 
         console.log('Criando usuário:', email, directoryOnly ? '(somente diretório)' : '(site)');
+
+        if (!email || !isValidEmail(email)) {
+          throw new Error('Informe um e-mail válido');
+        }
 
         if (!password || password.length < 6) {
           throw new Error('A senha deve ter no mínimo 6 caracteres');
         }
 
-        if (!directoryOnly && (!Array.isArray(roles) || roles.length === 0)) {
-          throw new Error('Selecione ao menos uma permissão do site');
+        const normalizedRoles = normalizeAppRoles(roles);
+
+        if (!directoryOnly && normalizedRoles.length === 0) {
+          throw new Error('Selecione ao menos uma permissão do site (admin, editor ou user)');
         }
 
         const displayName = (typeof fullName === 'string' && fullName.trim())
@@ -139,7 +171,19 @@ serve(async (req) => {
           );
         }
 
-        const roleInserts = (roles as string[]).map((role: string) => ({
+        // Trigger do banco pode já ter inserido roles — evita violação de unique
+        const { error: clearRolesError } = await supabaseAdmin
+          .from('st_user_roles')
+          .delete()
+          .eq('user_id', userId);
+
+        if (clearRolesError) {
+          console.error('Erro ao limpar roles antes do insert:', clearRolesError);
+          await supabaseAdmin.auth.admin.deleteUser(userId);
+          throw new Error(`Erro ao preparar permissões: ${clearRolesError.message}`);
+        }
+
+        const roleInserts = normalizedRoles.map((role: string) => ({
           user_id: userId,
           role,
           created_by: user.id,
@@ -168,6 +212,11 @@ serve(async (req) => {
       case 'update-roles': {
         const { userId, roles } = body;
 
+        const normalizedUpdateRoles = normalizeAppRoles(roles);
+        if (normalizedUpdateRoles.length === 0) {
+          throw new Error('Informe ao menos uma permissão válida (admin, editor ou user)');
+        }
+
         // Remover roles antigas
         const { error: deleteError } = await supabaseAdmin
           .from('st_user_roles')
@@ -177,7 +226,7 @@ serve(async (req) => {
         if (deleteError) throw deleteError;
 
         // Inserir novas roles
-        const roleInserts = roles.map((role: string) => ({
+        const roleInserts = normalizedUpdateRoles.map((role: string) => ({
           user_id: userId,
           role,
           created_by: user.id,

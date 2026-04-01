@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { X, Mail, UserPlus, Loader2, Eye, EyeOff, LayoutDashboard, FolderOpen } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Checkbox } from "@/components/ui/checkbox";
+import { getEdgeFunctionErrorMessage } from "@/utils/supabaseEdgeError";
 
 interface UserInviteModalProps {
   isOpen: boolean;
@@ -41,7 +42,8 @@ export const UserInviteModal = ({ isOpen, onClose, onSuccess }: UserInviteModalP
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!email || !password || password.length < 6) {
+    const emailTrimmed = email.trim();
+    if (!emailTrimmed || !password || password.length < 6) {
       toast({
         title: "Campos obrigatórios",
         description: "Preencha email e senha (mínimo 6 caracteres)",
@@ -65,31 +67,35 @@ export const UserInviteModal = ({ isOpen, onClose, onSuccess }: UserInviteModalP
         inviteKind === 'directory'
           ? {
               action: 'invite',
-              email,
+              email: emailTrimmed,
               fullName,
               password,
               inviteKind: 'directory',
             }
           : {
               action: 'invite',
-              email,
+              email: emailTrimmed,
               fullName,
               password,
               roles: selectedRoles,
             };
 
-      const { error } = await supabase.functions.invoke('manage-users', {
+      const { data, error } = await supabase.functions.invoke('manage-users', {
         body,
       });
 
       if (error) throw error;
 
+      if (data && typeof data === 'object' && 'error' in data && (data as { error?: string }).error) {
+        throw new Error(String((data as { error: string }).error));
+      }
+
       toast({
         title: inviteKind === 'directory' ? "Acesso ao drive criado" : "Usuário criado!",
         description:
           inviteKind === 'directory'
-            ? `${email} pode entrar no drive com esta senha. Sem acesso ao painel do site.`
-            : `Usuário ${email} criado com sucesso. Ele já pode fazer login com a senha definida.`,
+            ? `${emailTrimmed} pode entrar no drive com esta senha. Sem acesso ao painel do site.`
+            : `Usuário ${emailTrimmed} criado com sucesso. Ele já pode fazer login com a senha definida.`,
       });
 
       setEmail("");
@@ -100,10 +106,11 @@ export const UserInviteModal = ({ isOpen, onClose, onSuccess }: UserInviteModalP
       
       onSuccess();
       onClose();
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const description = await getEdgeFunctionErrorMessage(error);
       toast({
         title: "Erro ao criar usuário",
-        description: error.message,
+        description,
         variant: "destructive",
       });
     } finally {

@@ -4,6 +4,7 @@ import { X, Shield, Loader2, AlertTriangle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { Checkbox } from "@/components/ui/checkbox";
+import { getEdgeFunctionErrorMessage } from "@/utils/supabaseEdgeError";
 
 interface UserRolesModalProps {
   user: {
@@ -81,16 +82,21 @@ export const UserRolesModal = ({ user, isOpen, onClose, onSuccess }: UserRolesMo
 
       if (error) throw error;
 
+      if (data && typeof data === 'object' && 'error' in data && (data as { error?: string }).error) {
+        throw new Error(String((data as { error: string }).error));
+      }
+
       toast({
         title: "Permissões atualizadas!",
         description: `As permissões de ${user.full_name || user.email} foram atualizadas`,
       });
 
       onSuccess();
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const description = await getEdgeFunctionErrorMessage(error);
       toast({
         title: "Erro ao atualizar permissões",
-        description: error.message,
+        description,
         variant: "destructive",
       });
     } finally {

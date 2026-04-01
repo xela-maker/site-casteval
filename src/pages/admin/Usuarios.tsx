@@ -9,6 +9,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DIRECTORY_MEMBER_PROFILE_ROLE } from "@/constants/directoryRoles";
 import { cn } from "@/lib/utils";
+import { getEdgeFunctionErrorMessage } from "@/utils/supabaseEdgeError";
 
 type UserRole = {
   user_id: string;
@@ -36,24 +37,6 @@ type ProfileRow = {
   created_at: string;
   role: string | null;
 };
-
-async function getFunctionsErrorMessage(error: unknown): Promise<string> {
-  if (error && typeof error === "object" && "context" in error) {
-    const ctx = (error as { context?: Response }).context;
-    if (ctx && typeof ctx.clone === "function" && typeof ctx.json === "function") {
-      try {
-        const body = await ctx.clone().json();
-        if (body && typeof body === "object" && "error" in body && body.error != null) {
-          return String(body.error);
-        }
-      } catch {
-        /* ignore */
-      }
-    }
-  }
-  if (error instanceof Error) return error.message;
-  return "Erro ao chamar função manage-users";
-}
 
 function parseManageUsersResponse(raw: unknown): { users?: unknown[]; error?: string } {
   if (raw == null) return {};
@@ -160,7 +143,7 @@ export default function Usuarios() {
       });
 
       if (authError) {
-        throw new Error(await getFunctionsErrorMessage(authError));
+        throw new Error(await getEdgeFunctionErrorMessage(authError));
       }
 
       const parsed = parseManageUsersResponse(authResponse);
