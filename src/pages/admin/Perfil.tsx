@@ -9,6 +9,13 @@ import { ImageUploader } from '@/components/admin/ImageUploader';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { Camera, Mail, Lock, Activity } from 'lucide-react';
+import { DIRECTORY_MEMBER_PROFILE_ROLE } from '@/constants/directoryRoles';
+
+function profileRoleBadge(role: string | null | undefined) {
+  if (!role) return 'user';
+  if (role === DIRECTORY_MEMBER_PROFILE_ROLE) return 'Membro do diretório (drive)';
+  return role;
+}
 
 export default function Perfil() {
   const { user } = useAuth();
@@ -150,7 +157,7 @@ export default function Perfil() {
               <h2 className="text-2xl font-bold" style={{ color: 'hsl(var(--admin-text))' }}>
                 {profileData.full_name || 'Sem nome'}
               </h2>
-              <Badge variant="secondary">{profile?.role || 'user'}</Badge>
+              <Badge variant="secondary">{profileRoleBadge(profile?.role)}</Badge>
             </div>
             <p className="text-sm flex items-center gap-2" style={{ color: 'hsl(var(--admin-muted))' }}>
               <Mail className="admin-icon-sm" />

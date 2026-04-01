@@ -46,16 +46,28 @@ serve(async (req) => {
 
     if (rolesError) throw rolesError;
 
-    const isAdmin = userRoles?.some(r => r.role === 'admin');
-    if (!isAdmin) {
-      throw new Error('Acesso negado. Apenas administradores podem gerenciar usuários.');
-    }
+    const normRole = (role: string | null | undefined) =>
+      String(role ?? '').trim().toLowerCase();
+
+    const isAdmin = userRoles?.some((r) => normRole(r.role) === 'admin') ?? false;
+    const isEditor = userRoles?.some((r) => normRole(r.role) === 'editor') ?? false;
 
     // Processar requisição
     const body = await req.json();
     const { action } = body;
 
     console.log('Action:', action);
+
+    // Listagem: admin ou editor (mesmo critério do painel). Demais ações: só admin.
+    if (action === 'list') {
+      if (!isAdmin && !isEditor) {
+        throw new Error(
+          'Acesso negado. Apenas administradores ou editores podem ver a lista de usuários.',
+        );
+      }
+    } else if (!isAdmin) {
+      throw new Error('Acesso negado. Apenas administradores podem gerenciar usuários.');
+    }
 
     switch (action) {
       case 'invite': {
@@ -147,15 +159,37 @@ serve(async (req) => {
       }
 
       case 'list': {
-        // Buscar todos os usuários via Admin API
-        const { data: authData, error: authError } = await supabaseAdmin.auth.admin.listUsers();
-        
-        if (authError) throw authError;
+        // Buscar todos os usuários via Admin API (paginado — uma página por requisição)
+        const allUsers: Record<string, unknown>[] = [];
+        let page = 1;
+        const perPage = 200;
+
+        for (;;) {
+          const { data: authData, error: authError } = await supabaseAdmin.auth.admin.listUsers({
+            page,
+            perPage,
+          });
+
+          if (authError) throw authError;
+
+          const batch = authData?.users ?? [];
+          if (!Array.isArray(batch) || batch.length === 0) {
+            break;
+          }
+
+          allUsers.push(...batch);
+
+          if (batch.length < perPage) {
+            break;
+          }
+
+          page += 1;
+        }
 
         return new Response(
-          JSON.stringify({ 
-            success: true, 
-            users: authData.users 
+          JSON.stringify({
+            success: true,
+            users: allUsers,
           }),
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );

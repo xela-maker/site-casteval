@@ -65,20 +65,41 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const checkUserRoles = async (userId: string) => {
+    const clearStaff = () => {
+      setIsAdmin(false);
+      setIsEditor(false);
+    };
+
     try {
-      const { data: roles } = await supabase
+      const { data: roles, error: rolesError } = await supabase
         .from('st_user_roles')
         .select('role')
         .eq('user_id', userId);
 
-      if (roles) {
-        const hasAdmin = roles.some(r => r.role === 'admin');
-        const hasEditor = roles.some(r => r.role === 'editor');
-        setIsAdmin(hasAdmin);
-        setIsEditor(hasEditor || hasAdmin);
+      if (rolesError || !roles) {
+        clearStaff();
+        return;
       }
+
+      const norm = (r: string) => String(r).trim().toLowerCase();
+
+      // Painel do site: somente admin/editor em st_user_roles (enum app_role).
+      // Linhas com role `user` não liberam o admin. `directory_member` existe só em profiles, não aqui.
+      const siteStaffRoles = roles.filter((r) => {
+        const role = norm(r.role);
+        return role === 'admin' || role === 'editor';
+      });
+
+      const hasAdmin = siteStaffRoles.some((r) => norm(r.role) === 'admin');
+      const hasEditor =
+        siteStaffRoles.some((r) => norm(r.role) === 'editor') || hasAdmin;
+
+      // profiles.role = directory_member (drive) não entra aqui: sem linha admin/editor em st_user_roles = sem painel.
+      setIsAdmin(hasAdmin);
+      setIsEditor(hasEditor);
     } catch (error) {
       console.error('Error checking roles:', error);
+      clearStaff();
     }
   };
 
