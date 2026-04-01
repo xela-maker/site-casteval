@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { X, Mail, UserPlus, Loader2, Eye, EyeOff } from "lucide-react";
+import { X, Mail, UserPlus, Loader2, Eye, EyeOff, LayoutDashboard, FolderOpen } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Checkbox } from "@/components/ui/checkbox";
 
@@ -17,6 +17,7 @@ export const UserInviteModal = ({ isOpen, onClose, onSuccess }: UserInviteModalP
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [selectedRoles, setSelectedRoles] = useState<string[]>(['user']);
+  const [inviteKind, setInviteKind] = useState<'site' | 'directory'>('site');
   const [loading, setLoading] = useState(false);
 
   const theme = document.documentElement.getAttribute("data-admin-theme") || "dark";
@@ -40,10 +41,19 @@ export const UserInviteModal = ({ isOpen, onClose, onSuccess }: UserInviteModalP
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!email || !password || password.length < 6 || selectedRoles.length === 0) {
+    if (!email || !password || password.length < 6) {
       toast({
         title: "Campos obrigatórios",
-        description: "Preencha email, senha (mínimo 6 caracteres) e selecione ao menos uma role",
+        description: "Preencha email e senha (mínimo 6 caracteres)",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (inviteKind === 'site' && selectedRoles.length === 0) {
+      toast({
+        title: "Permissões",
+        description: "Selecione ao menos uma permissão do site ou escolha “Apenas diretório”",
         variant: "destructive",
       });
       return;
@@ -51,28 +61,42 @@ export const UserInviteModal = ({ isOpen, onClose, onSuccess }: UserInviteModalP
 
     setLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke('manage-users', {
-        body: {
-          action: 'invite',
-          email,
-          fullName,
-          password,
-          roles: selectedRoles,
-        },
+      const body =
+        inviteKind === 'directory'
+          ? {
+              action: 'invite',
+              email,
+              fullName,
+              password,
+              inviteKind: 'directory',
+            }
+          : {
+              action: 'invite',
+              email,
+              fullName,
+              password,
+              roles: selectedRoles,
+            };
+
+      const { error } = await supabase.functions.invoke('manage-users', {
+        body,
       });
 
       if (error) throw error;
 
       toast({
-        title: "Usuário criado!",
-        description: `Usuário ${email} criado com sucesso. Ele já pode fazer login com a senha definida.`,
+        title: inviteKind === 'directory' ? "Acesso ao drive criado" : "Usuário criado!",
+        description:
+          inviteKind === 'directory'
+            ? `${email} pode entrar no drive com esta senha. Sem acesso ao painel do site.`
+            : `Usuário ${email} criado com sucesso. Ele já pode fazer login com a senha definida.`,
       });
 
-      // Resetar formulário
       setEmail("");
       setFullName("");
       setPassword("");
       setSelectedRoles(['user']);
+      setInviteKind('site');
       
       onSuccess();
       onClose();
@@ -137,7 +161,7 @@ export const UserInviteModal = ({ isOpen, onClose, onSuccess }: UserInviteModalP
               <UserPlus size={20} color="#000" />
             </div>
             <h2 style={{ color: text, fontSize: "20px", fontWeight: 700, margin: 0 }}>
-              Criar Novo Usuário
+              Convidar / criar usuário
             </h2>
           </div>
           <button
@@ -162,6 +186,60 @@ export const UserInviteModal = ({ isOpen, onClose, onSuccess }: UserInviteModalP
 
         {/* Form */}
         <form onSubmit={handleSubmit} style={{ padding: "24px" }}>
+          <div style={{ marginBottom: "20px" }}>
+            <label style={{ display: "block", color: text, fontSize: "14px", fontWeight: 600, marginBottom: "10px" }}>
+              Tipo de acesso *
+            </label>
+            <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+              <button
+                type="button"
+                onClick={() => setInviteKind("site")}
+                style={{
+                  display: "flex",
+                  alignItems: "flex-start",
+                  gap: "12px",
+                  padding: "14px",
+                  borderRadius: "12px",
+                  border: `2px solid ${inviteKind === "site" ? "#FFB000" : border}`,
+                  backgroundColor: isDark ? "#0f1113" : "#f8f9fa",
+                  cursor: "pointer",
+                  textAlign: "left",
+                }}
+              >
+                <LayoutDashboard size={22} style={{ color: "#FFB000", marginTop: "2px", flexShrink: 0 }} />
+                <div>
+                  <div style={{ color: text, fontSize: "14px", fontWeight: 700 }}>Equipe do site (painel)</div>
+                  <div style={{ color: muted, fontSize: "12px", marginTop: "4px", lineHeight: 1.4 }}>
+                    Admin, editor ou usuário no painel administrativo e no site conforme as permissões abaixo.
+                  </div>
+                </div>
+              </button>
+              <button
+                type="button"
+                onClick={() => setInviteKind("directory")}
+                style={{
+                  display: "flex",
+                  alignItems: "flex-start",
+                  gap: "12px",
+                  padding: "14px",
+                  borderRadius: "12px",
+                  border: `2px solid ${inviteKind === "directory" ? "#FFB000" : border}`,
+                  backgroundColor: isDark ? "#0f1113" : "#f8f9fa",
+                  cursor: "pointer",
+                  textAlign: "left",
+                }}
+              >
+                <FolderOpen size={22} style={{ color: "#FFB000", marginTop: "2px", flexShrink: 0 }} />
+                <div>
+                  <div style={{ color: text, fontSize: "14px", fontWeight: 700 }}>Apenas diretório (drive)</div>
+                  <div style={{ color: muted, fontSize: "12px", marginTop: "4px", lineHeight: 1.4 }}>
+                    Só acesso ao Drive Casteval. Não entra no painel deste site.
+                  </div>
+                </div>
+              </button>
+            </div>
+          </div>
+
           <div style={{ marginBottom: "20px" }}>
             <label style={{ display: "block", color: text, fontSize: "14px", fontWeight: 600, marginBottom: "8px" }}>
               Email *
@@ -198,13 +276,13 @@ export const UserInviteModal = ({ isOpen, onClose, onSuccess }: UserInviteModalP
 
           <div style={{ marginBottom: "24px" }}>
             <label style={{ display: "block", color: text, fontSize: "14px", fontWeight: 600, marginBottom: "8px" }}>
-              Nome Completo (opcional)
+              {inviteKind === "directory" ? "Nome no drive (recomendado)" : "Nome completo (opcional)"}
             </label>
             <input
               type="text"
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
-              placeholder="João da Silva"
+              placeholder={inviteKind === "directory" ? "Como aparecerá no drive" : "João da Silva"}
               style={{
                 width: "100%",
                 padding: "12px 16px",
@@ -261,78 +339,80 @@ export const UserInviteModal = ({ isOpen, onClose, onSuccess }: UserInviteModalP
             </div>
           </div>
 
-          <div style={{ marginBottom: "24px" }}>
-            <label style={{ display: "block", color: text, fontSize: "14px", fontWeight: 600, marginBottom: "12px" }}>
-              Permissões *
-            </label>
-            <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-              <label
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "12px",
-                  padding: "12px",
-                  borderRadius: "10px",
-                  border: `1px solid ${border}`,
-                  backgroundColor: isDark ? "#0f1113" : "#f8f9fa",
-                  cursor: "pointer",
-                }}
-              >
-                <Checkbox
-                  checked={selectedRoles.includes('admin')}
-                  onCheckedChange={() => handleRoleToggle('admin')}
-                />
-                <div style={{ flex: 1 }}>
-                  <div style={{ color: text, fontSize: "14px", fontWeight: 600 }}>🔴 Admin</div>
-                  <div style={{ color: muted, fontSize: "12px" }}>Acesso total ao sistema</div>
-                </div>
+          {inviteKind === "site" && (
+            <div style={{ marginBottom: "24px" }}>
+              <label style={{ display: "block", color: text, fontSize: "14px", fontWeight: 600, marginBottom: "12px" }}>
+                Permissões do painel *
               </label>
+              <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                <label
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "12px",
+                    padding: "12px",
+                    borderRadius: "10px",
+                    border: `1px solid ${border}`,
+                    backgroundColor: isDark ? "#0f1113" : "#f8f9fa",
+                    cursor: "pointer",
+                  }}
+                >
+                  <Checkbox
+                    checked={selectedRoles.includes('admin')}
+                    onCheckedChange={() => handleRoleToggle('admin')}
+                  />
+                  <div style={{ flex: 1 }}>
+                    <div style={{ color: text, fontSize: "14px", fontWeight: 600 }}>🔴 Admin</div>
+                    <div style={{ color: muted, fontSize: "12px" }}>Acesso total ao sistema</div>
+                  </div>
+                </label>
 
-              <label
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "12px",
-                  padding: "12px",
-                  borderRadius: "10px",
-                  border: `1px solid ${border}`,
-                  backgroundColor: isDark ? "#0f1113" : "#f8f9fa",
-                  cursor: "pointer",
-                }}
-              >
-                <Checkbox
-                  checked={selectedRoles.includes('editor')}
-                  onCheckedChange={() => handleRoleToggle('editor')}
-                />
-                <div style={{ flex: 1 }}>
-                  <div style={{ color: text, fontSize: "14px", fontWeight: 600 }}>🟡 Editor</div>
-                  <div style={{ color: muted, fontSize: "12px" }}>Pode criar e editar conteúdo</div>
-                </div>
-              </label>
+                <label
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "12px",
+                    padding: "12px",
+                    borderRadius: "10px",
+                    border: `1px solid ${border}`,
+                    backgroundColor: isDark ? "#0f1113" : "#f8f9fa",
+                    cursor: "pointer",
+                  }}
+                >
+                  <Checkbox
+                    checked={selectedRoles.includes('editor')}
+                    onCheckedChange={() => handleRoleToggle('editor')}
+                  />
+                  <div style={{ flex: 1 }}>
+                    <div style={{ color: text, fontSize: "14px", fontWeight: 600 }}>🟡 Editor</div>
+                    <div style={{ color: muted, fontSize: "12px" }}>Pode criar e editar conteúdo</div>
+                  </div>
+                </label>
 
-              <label
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "12px",
-                  padding: "12px",
-                  borderRadius: "10px",
-                  border: `1px solid ${border}`,
-                  backgroundColor: isDark ? "#0f1113" : "#f8f9fa",
-                  cursor: "pointer",
-                }}
-              >
-                <Checkbox
-                  checked={selectedRoles.includes('user')}
-                  onCheckedChange={() => handleRoleToggle('user')}
-                />
-                <div style={{ flex: 1 }}>
-                  <div style={{ color: text, fontSize: "14px", fontWeight: 600 }}>⚪ Usuário</div>
-                  <div style={{ color: muted, fontSize: "12px" }}>Acesso básico</div>
-                </div>
-              </label>
+                <label
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "12px",
+                    padding: "12px",
+                    borderRadius: "10px",
+                    border: `1px solid ${border}`,
+                    backgroundColor: isDark ? "#0f1113" : "#f8f9fa",
+                    cursor: "pointer",
+                  }}
+                >
+                  <Checkbox
+                    checked={selectedRoles.includes('user')}
+                    onCheckedChange={() => handleRoleToggle('user')}
+                  />
+                  <div style={{ flex: 1 }}>
+                    <div style={{ color: text, fontSize: "14px", fontWeight: 600 }}>⚪ Usuário</div>
+                    <div style={{ color: muted, fontSize: "12px" }}>Acesso básico</div>
+                  </div>
+                </label>
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Actions */}
           <div style={{ display: "flex", gap: "12px", justifyContent: "flex-end" }}>
@@ -372,7 +452,7 @@ export const UserInviteModal = ({ isOpen, onClose, onSuccess }: UserInviteModalP
               }}
             >
               {loading && <Loader2 size={16} className="animate-spin" />}
-              {loading ? "Criando..." : "Criar Usuário"}
+              {loading ? "Criando..." : inviteKind === "directory" ? "Criar acesso ao drive" : "Criar usuário"}
             </button>
           </div>
         </form>

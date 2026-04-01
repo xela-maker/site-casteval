@@ -71,23 +71,36 @@ serve(async (req) => {
 
     switch (action) {
       case 'invite': {
-        const { email, fullName, password, roles } = body;
+        const { email, fullName, password, roles, inviteKind } = body;
+        const directoryOnly = inviteKind === 'directory';
 
-        console.log('Criando usuário diretamente:', email);
+        console.log('Criando usuário:', email, directoryOnly ? '(somente diretório)' : '(site)');
 
-        // Validar senha (mínimo 6 caracteres)
         if (!password || password.length < 6) {
           throw new Error('A senha deve ter no mínimo 6 caracteres');
         }
 
-        // Criar usuário diretamente com senha e email confirmado
+        if (!directoryOnly && (!Array.isArray(roles) || roles.length === 0)) {
+          throw new Error('Selecione ao menos uma permissão do site');
+        }
+
+        const displayName = (typeof fullName === 'string' && fullName.trim())
+          ? fullName.trim()
+          : (email.split('@')[0] || 'Usuário');
+
         const { data: userData, error: createError } = await supabaseAdmin.auth.admin.createUser({
           email,
           password,
-          email_confirm: true, // Email já confirmado - usuário pode fazer login imediatamente
-          user_metadata: {
-            full_name: fullName || null,
-          }
+          email_confirm: true,
+          user_metadata: directoryOnly
+            ? {
+                display_name: displayName,
+                signup_origin: 'diretorio',
+                full_name: displayName,
+              }
+            : {
+                full_name: fullName || null,
+              },
         });
 
         if (createError) {
@@ -96,10 +109,37 @@ serve(async (req) => {
         }
 
         const userId = userData.user.id;
-        console.log('Usuário criado com sucesso:', userId);
+        console.log('Usuário criado:', userId);
 
-        // Atribuir roles (perfil será criado automaticamente pelo trigger)
-        const roleInserts = roles.map((role: string) => ({
+        if (directoryOnly) {
+          const { error: profileError } = await supabaseAdmin.from('profiles').upsert(
+            {
+              id: userId,
+              full_name: displayName,
+              role: 'directory_member',
+              updated_at: new Date().toISOString(),
+            },
+            { onConflict: 'id' },
+          );
+
+          if (profileError) {
+            console.error('Erro ao gravar perfil (diretório):', profileError);
+            await supabaseAdmin.auth.admin.deleteUser(userId);
+            throw new Error(`Erro ao criar perfil do drive: ${profileError.message}`);
+          }
+
+          return new Response(
+            JSON.stringify({
+              success: true,
+              user: userData.user,
+              message:
+                'Usuário do diretório criado. Acesso apenas ao drive, sem painel do site.',
+            }),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+          );
+        }
+
+        const roleInserts = (roles as string[]).map((role: string) => ({
           user_id: userId,
           role,
           created_by: user.id,
@@ -111,20 +151,17 @@ serve(async (req) => {
 
         if (rolesError) {
           console.error('Erro ao atribuir roles:', rolesError);
-          // Reverter criação do usuário se falhar ao atribuir roles
           await supabaseAdmin.auth.admin.deleteUser(userId);
           throw new Error(`Erro ao atribuir roles: ${rolesError.message}`);
         }
 
-        console.log('Roles atribuídas com sucesso');
-
         return new Response(
-          JSON.stringify({ 
-            success: true, 
+          JSON.stringify({
+            success: true,
             user: userData.user,
-            message: 'Usuário criado com sucesso! O usuário pode fazer login imediatamente.'
+            message: 'Usuário criado com sucesso! O usuário pode fazer login imediatamente.',
           }),
-          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
         );
       }
 
