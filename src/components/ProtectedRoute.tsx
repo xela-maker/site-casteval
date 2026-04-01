@@ -7,7 +7,7 @@ interface ProtectedRouteProps {
 }
 
 export const ProtectedRoute = ({ children, requireAdmin = false }: ProtectedRouteProps) => {
-  const { user, isAdmin, isEditor, isLoading } = useAuth();
+  const { user, isAdmin, isEditor, isLoading, rolesReady } = useAuth();
 
   if (isLoading) {
     return (
@@ -19,6 +19,16 @@ export const ProtectedRoute = ({ children, requireAdmin = false }: ProtectedRout
 
   if (!user) {
     return <Navigate to="/auth/login" replace />;
+  }
+
+  // Sem isso, após login o user já existe mas checkUserRoles ainda roda no setTimeout(0) —
+  // isAdmin/isEditor ficam false um frame e o painel manda para /.
+  if (requireAdmin && !rolesReady) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
+      </div>
+    );
   }
 
   if (requireAdmin && !isAdmin && !isEditor) {

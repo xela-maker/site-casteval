@@ -144,11 +144,13 @@ serve(async (req) => {
         console.log('Usuário criado:', userId);
 
         if (directoryOnly) {
+          // Não gravar profiles.role = 'directory_member': o CHECK profiles_role_check no projeto
+          // costuma permitir só valores do site (ex. user). Quem é do drive fica marcado por
+          // user_metadata.signup_origin = 'diretorio' (já enviado no createUser acima).
           const { error: profileError } = await supabaseAdmin.from('profiles').upsert(
             {
               id: userId,
               full_name: displayName,
-              role: 'directory_member',
               updated_at: new Date().toISOString(),
             },
             { onConflict: 'id' },

@@ -2,91 +2,88 @@
   "hash": "23996999",
   "configHash": "2e4574f8",
   "lockfileHash": "381fceb9",
-  "browserHash": "fe8fa59d",
+  "browserHash": "70ccbba3",
   "optimized": {
     "react/jsx-dev-runtime": {
       "src": "../../node_modules/react/jsx-dev-runtime.js",
       "file": "react_jsx-dev-runtime.js",
-      "fileHash": "2437001b",
+      "fileHash": "7dce843b",
       "needsInterop": true
     },
     "react-dom/client": {
       "src": "../../node_modules/react-dom/client.js",
       "file": "react-dom_client.js",
-      "fileHash": "cd3aec43",
+      "fileHash": "fe06c963",
       "needsInterop": true
     },
     "@tanstack/react-query": {
       "src": "../../node_modules/@tanstack/react-query/build/modern/index.js",
       "file": "@tanstack_react-query.js",
-      "fileHash": "d82b8fd7",
+      "fileHash": "16c0d679",
       "needsInterop": false
     },
     "react-router-dom": {
       "src": "../../node_modules/react-router-dom/dist/index.js",
       "file": "react-router-dom.js",
-      "fileHash": "c26fdc10",
+      "fileHash": "a3f578ae",
       "needsInterop": false
     },
     "react": {
       "src": "../../node_modules/react/index.js",
       "file": "react.js",
-      "fileHash": "066f514a",
+      "fileHash": "884f1218",
       "needsInterop": true
-    },
-    "sonner": {
-      "src": "../../node_modules/sonner/dist/index.mjs",
-      "file": "sonner.js",
-      "fileHash": "539f6faa",
-      "needsInterop": false
-    },
-    "zod": {
-      "src": "../../node_modules/zod/index.js",
-      "file": "zod.js",
-      "fileHash": "1f978d4f",
-      "needsInterop": false
     },
     "lucide-react": {
       "src": "../../node_modules/lucide-react/dist/esm/lucide-react.js",
       "file": "lucide-react.js",
-      "fileHash": "9aea7b7a",
+      "fileHash": "f7d0dbec",
       "needsInterop": false
     },
     "date-fns": {
       "src": "../../node_modules/date-fns/index.mjs",
       "file": "date-fns.js",
-      "fileHash": "70d7b327",
+      "fileHash": "d3a1a854",
       "needsInterop": false
     },
     "date-fns/locale": {
       "src": "../../node_modules/date-fns/locale.mjs",
       "file": "date-fns_locale.js",
-      "fileHash": "ee658b8a",
+      "fileHash": "a231bdca",
+      "needsInterop": false
+    },
+    "sonner": {
+      "src": "../../node_modules/sonner/dist/index.mjs",
+      "file": "sonner.js",
+      "fileHash": "2d3b377c",
+      "needsInterop": false
+    },
+    "zod": {
+      "src": "../../node_modules/zod/index.js",
+      "file": "zod.js",
+      "fileHash": "186f2dc4",
       "needsInterop": false
     },
     "react-beautiful-dnd": {
       "src": "../../node_modules/react-beautiful-dnd/dist/react-beautiful-dnd.esm.js",
       "file": "react-beautiful-dnd.js",
-      "fileHash": "a74ae1bf",
+      "fileHash": "d6e22c97",
       "needsInterop": false
     },
     "react-hook-form": {
       "src": "../../node_modules/react-hook-form/dist/index.esm.mjs",
       "file": "react-hook-form.js",
-      "fileHash": "43cb6b58",
+      "fileHash": "d07a1691",
       "needsInterop": false
     },
     "@hookform/resolvers/zod": {
       "src": "../../node_modules/@hookform/resolvers/zod/dist/zod.mjs",
       "file": "@hookform_resolvers_zod.js",
-      "fileHash": "387256b8",
+      "fileHash": "037e6fd1",
       "needsInterop": false
     }
   },
   "chunks": {
-    "chunk-PH4L3SJA": {
-      "file": "chunk-PH4L3SJA.js"
-    },
     "chunk-P25ABFQD": {
       "file": "chunk-P25ABFQD.js"
     },
@@ -95,6 +92,9 @@
     },
     "chunk-2CLD7BNN": {
       "file": "chunk-2CLD7BNN.js"
+    },
+    "chunk-PH4L3SJA": {
+      "file": "chunk-PH4L3SJA.js"
     },
     "chunk-WOOG5QLI": {
       "file": "chunk-WOOG5QLI.js"
