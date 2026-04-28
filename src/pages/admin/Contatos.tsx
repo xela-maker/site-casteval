@@ -31,6 +31,7 @@ export default function Contatos() {
   const [selectedContato, setSelectedContato] = useState<Contato | null>(null);
   const [statusFilter, setStatusFilter] = useState<string>('todos');
   const [searchTerm, setSearchTerm] = useState('');
+  const [originTab, setOriginTab] = useState<'formulario' | 'whatsapp' | 'empreendimento'>('formulario');
 
   // Theme colors
   const theme = typeof document !== 'undefined' ? document.documentElement.getAttribute("data-admin-theme") || "dark" : "dark";
@@ -92,13 +93,26 @@ export default function Contatos() {
   };
 
   const filteredContatos = contatos.filter((c) => {
+    const isWhatsAppLead = c.origem === 'whatsapp_modal';
+    const isEmpreendimentoLead = c.origem === 'empreendimento_interesse_form';
+    const matchesOrigin =
+      originTab === 'whatsapp'
+        ? isWhatsAppLead
+        : originTab === 'empreendimento'
+          ? isEmpreendimentoLead
+          : !isWhatsAppLead && !isEmpreendimentoLead;
     const matchesStatus = statusFilter === 'todos' || c.status === statusFilter;
     const matchesSearch = !searchTerm || 
       c.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
       c.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (c.telefone && c.telefone.includes(searchTerm));
-    return matchesStatus && matchesSearch;
+      (c.telefone && c.telefone.includes(searchTerm)) ||
+      (c.interesse && c.interesse.toLowerCase().includes(searchTerm.toLowerCase()));
+    return matchesOrigin && matchesStatus && matchesSearch;
   });
+
+  const formularioCount = contatos.filter((c) => c.origem !== 'whatsapp_modal' && c.origem !== 'empreendimento_interesse_form').length;
+  const whatsappCount = contatos.filter((c) => c.origem === 'whatsapp_modal').length;
+  const empreendimentoCount = contatos.filter((c) => c.origem === 'empreendimento_interesse_form').length;
 
   const getStatusBadge = (status: string) => {
     const statusConfig: Record<string, { bg: string; color: string; label: string }> = {
@@ -176,6 +190,61 @@ export default function Contatos() {
       </div>
 
       {/* Filters */}
+      <div style={{
+        display: 'flex',
+        gap: '8px',
+        marginBottom: '20px',
+      }}>
+        <button
+          onClick={() => setOriginTab('formulario')}
+          style={{
+            padding: '10px 14px',
+            borderRadius: '10px',
+            border: `1px solid ${originTab === 'formulario' ? brand : border}`,
+            background: originTab === 'formulario' ? `${brand}20` : surface2,
+            color: originTab === 'formulario' ? brand : textMuted,
+            fontSize: '13px',
+            fontWeight: 600,
+            cursor: 'pointer',
+            transition: 'all 0.2s ease',
+          }}
+        >
+          Formulário ({formularioCount})
+        </button>
+        <button
+          onClick={() => setOriginTab('whatsapp')}
+          style={{
+            padding: '10px 14px',
+            borderRadius: '10px',
+            border: `1px solid ${originTab === 'whatsapp' ? brand : border}`,
+            background: originTab === 'whatsapp' ? `${brand}20` : surface2,
+            color: originTab === 'whatsapp' ? brand : textMuted,
+            fontSize: '13px',
+            fontWeight: 600,
+            cursor: 'pointer',
+            transition: 'all 0.2s ease',
+          }}
+        >
+          WhatsApp Modal ({whatsappCount})
+        </button>
+        <button
+          onClick={() => setOriginTab('empreendimento')}
+          style={{
+            padding: '10px 14px',
+            borderRadius: '10px',
+            border: `1px solid ${originTab === 'empreendimento' ? brand : border}`,
+            background: originTab === 'empreendimento' ? `${brand}20` : surface2,
+            color: originTab === 'empreendimento' ? brand : textMuted,
+            fontSize: '13px',
+            fontWeight: 600,
+            cursor: 'pointer',
+            transition: 'all 0.2s ease',
+          }}
+        >
+          Interesse Empreendimento ({empreendimentoCount})
+        </button>
+      </div>
+
       <div style={{
         display: 'flex',
         gap: '12px',
@@ -419,7 +488,8 @@ export default function Contatos() {
                     <td style={{
                       padding: '16px 20px',
                       fontSize: '14px',
-                      color: textMuted,
+                      color: contato.origem === 'empreendimento_interesse_form' ? brand : textMuted,
+                      fontWeight: contato.origem === 'empreendimento_interesse_form' ? 700 : 400,
                     }}>
                       {contato.interesse || '-'}
                     </td>

@@ -11,6 +11,8 @@ import { useEmpreendimento } from "@/hooks/useEmpreendimentos";
 import { useItensLazerWithIcons } from "@/hooks/useItensLazerWithIcons";
 import { createEmpreendimentoSchema } from "@/lib/structuredData";
 import { useSwipeGesture } from "@/hooks/useSwipeGesture";
+import { supabase } from "@/integrations/supabase/client";
+import Swal from "sweetalert2";
 import casaVolpiHero from "@/assets/casa-volpi-hero.jpg";
 import familiaCta from "@/assets/familia-cta.jpg";
 import {
@@ -555,12 +557,113 @@ export default function EmpreendimentoDetalhes() {
   const [lightboxIndex, setLightboxIndex] = useState(0);
   const [videoModalOpen, setVideoModalOpen] = useState(false);
   const [implantacaoLightboxOpen, setImplantacaoLightboxOpen] = useState(false);
+  const [interestFormData, setInterestFormData] = useState({
+    nome: "",
+    email: "",
+    mensagem: "",
+    consentimento: false,
+  });
 
   // carrossel da faixa de infos (mobile/tablet)
   const [currentInfoIndex, setCurrentInfoIndex] = useState(0);
   const amenidadeIds = result?.amenidades || [];
   const { data: itensLazerWithIcons = [] } = useItensLazerWithIcons(amenidadeIds);
   const { openForProperty } = useWhatsAppIntegration();
+
+  const handleInterestSubmit = async () => {
+    const nome = interestFormData.nome.trim();
+    const email = interestFormData.email.trim();
+    const mensagem = interestFormData.mensagem.trim();
+
+    if (!nome || !email || !mensagem) {
+      await Swal.fire({
+        icon: "warning",
+        title: "Preencha os campos",
+        text: "Informe nome, e-mail e mensagem para continuar.",
+        confirmButtonText: "Ok",
+        background: "#0F0F0F",
+        color: "#FFFFFF",
+        iconColor: "#F5B321",
+        confirmButtonColor: "#F5B321",
+        customClass: {
+          popup: "rounded-none",
+        },
+      });
+      return;
+    }
+
+    if (!interestFormData.consentimento) {
+      await Swal.fire({
+        icon: "warning",
+        title: "Confirme a politica",
+        text: "Voce precisa aceitar a politica de privacidade.",
+        confirmButtonText: "Ok",
+        background: "#0F0F0F",
+        color: "#FFFFFF",
+        iconColor: "#F5B321",
+        confirmButtonColor: "#F5B321",
+        customClass: {
+          popup: "rounded-none",
+        },
+      });
+      return;
+    }
+
+    const empreendimentoNome = result?.nome || "Empreendimento";
+    const empreendimentoId = result?.id || null;
+
+    const { error } = await supabase.from("st_contatos").insert({
+      nome,
+      email,
+      mensagem,
+      interesse: empreendimentoNome,
+      empreendimento_id: empreendimentoId,
+      status: "novo",
+      origem: "empreendimento_interesse_form",
+      url_origem: window.location.href,
+    });
+
+    if (error) {
+      console.error("Erro ao salvar interesse do empreendimento:", error);
+      await Swal.fire({
+        icon: "error",
+        title: "Erro ao enviar",
+        text: "Nao foi possivel registrar seu interesse. Tente novamente.",
+        confirmButtonText: "Fechar",
+        background: "#0F0F0F",
+        color: "#FFFFFF",
+        iconColor: "#F5B321",
+        confirmButtonColor: "#F5B321",
+        customClass: {
+          popup: "rounded-none",
+        },
+      });
+      return;
+    }
+
+    openForProperty(empreendimento.nome);
+
+    await Swal.fire({
+      icon: "success",
+      title: "Solicitacao enviada!",
+      text: "Recebemos seu interesse. Vamos continuar seu atendimento no WhatsApp.",
+      confirmButtonText: "Entendi",
+      background: "#0F0F0F",
+      color: "#FFFFFF",
+      iconColor: "#F5B321",
+      confirmButtonColor: "#F5B321",
+      customClass: {
+        popup: "rounded-none",
+      },
+    });
+
+    setInterestFormData({
+      nome: "",
+      email: "",
+      mensagem: "",
+      consentimento: false,
+    });
+  };
 
   // auto-slide somente em telas menores - SEMPRE chamar hooks antes dos early returns
   useEffect(() => {
@@ -1467,10 +1570,23 @@ export default function EmpreendimentoDetalhes() {
               Preencha suas informações para receber uma consultoria especializada.
             </p>
 
-            <form onSubmit={(e) => e.preventDefault()} className="contact-form">
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                void handleInterestSubmit();
+              }}
+              className="contact-form"
+            >
               <input
                 type="text"
                 placeholder="Nome"
+                value={interestFormData.nome}
+                onChange={(e) =>
+                  setInterestFormData((prev) => ({
+                    ...prev,
+                    nome: e.target.value,
+                  }))
+                }
                 style={{
                   padding: "10px 12px",
                   borderRadius: 0,
@@ -1485,6 +1601,13 @@ export default function EmpreendimentoDetalhes() {
               <input
                 type="email"
                 placeholder="Email"
+                value={interestFormData.email}
+                onChange={(e) =>
+                  setInterestFormData((prev) => ({
+                    ...prev,
+                    email: e.target.value,
+                  }))
+                }
                 style={{
                   padding: "10px 12px",
                   borderRadius: 0,
@@ -1499,6 +1622,13 @@ export default function EmpreendimentoDetalhes() {
               <input
                 type="text"
                 placeholder="Mensagem"
+                value={interestFormData.mensagem}
+                onChange={(e) =>
+                  setInterestFormData((prev) => ({
+                    ...prev,
+                    mensagem: e.target.value,
+                  }))
+                }
                 style={{
                   padding: "10px 12px",
                   borderRadius: 0,
@@ -1533,13 +1663,21 @@ export default function EmpreendimentoDetalhes() {
                     color: "#CCCCCC",
                   }}
                 >
-                  <input type="checkbox" />
+                  <input
+                    type="checkbox"
+                    checked={interestFormData.consentimento}
+                    onChange={(e) =>
+                      setInterestFormData((prev) => ({
+                        ...prev,
+                        consentimento: e.target.checked,
+                      }))
+                    }
+                  />
                   <span>Li e concordo com a política de privacidade.</span>
                 </label>
 
                 <button
-                  type="button"
-                  onClick={() => openForProperty(empreendimento.nome)}
+                  type="submit"
                   style={{
                     padding: "10px 32px",
                     backgroundColor: "#F5B321",

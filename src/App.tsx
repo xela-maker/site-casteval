@@ -8,6 +8,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { AdminPreferencesProvider } from "@/contexts/AdminPreferencesContext";
 import { ScrollToTop } from "@/components/ScrollToTop";
 import { TrackingScripts } from "@/components/TrackingScripts";
+import { WhatsAppLeadCaptureModal } from "@/components/WhatsAppLeadCaptureModal";
 import Index from "./pages/Index";
 import Empreendimentos from "./pages/Empreendimentos";
 import EmpreendimentoDetalhes from "./pages/EmpreendimentoDetalhes";
@@ -59,6 +60,7 @@ const App = () => (
         <TooltipProvider>
           <Toaster />
           <Sonner />
+          <WhatsAppLeadCaptureModal />
           <div className="page-transition">
             <Routes>
               {/* Public Routes */}

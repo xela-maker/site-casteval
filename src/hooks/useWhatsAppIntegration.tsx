@@ -1,4 +1,5 @@
 import { useConfig } from "./useConfig";
+import { requestWhatsAppLeadOpen } from "@/lib/whatsappLeadGate";
 
 export const useWhatsAppIntegration = () => {
   const { data: config } = useConfig();
@@ -21,9 +22,10 @@ export const useWhatsAppIntegration = () => {
   };
 
   const open = (message: string) => {
-    const encodedMessage = encodeURIComponent(message);
-    const url = `https://wa.me/${phoneNumber}?text=${encodedMessage}`;
-    window.open(url, '_blank');
+    requestWhatsAppLeadOpen({
+      phoneNumber,
+      message,
+    });
   };
 
   return {
