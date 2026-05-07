@@ -25,3 +25,23 @@ export const trackWhatsAppClick = (source: string) => {
   }
 };
 
+export const trackFormSubmit = (formName: string) => {
+  if (typeof window === "undefined") return;
+
+  const label = formName || "unknown_form";
+
+  if (typeof window.gtag === "function") {
+    window.gtag("event", "form_submit", {
+      event_category: "lead",
+      event_label: label,
+    });
+  }
+
+  if (Array.isArray(window.dataLayer)) {
+    window.dataLayer.push({
+      event: "form_submit",
+      form_name: label,
+    });
+  }
+};
+

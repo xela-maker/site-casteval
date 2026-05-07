@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
+import { trackFormSubmit } from "@/utils/analytics";
 import {
   WHATSAPP_LEAD_OPEN_EVENT,
   WhatsAppLeadRequest,
@@ -150,6 +151,7 @@ export const WhatsAppLeadCaptureModal = () => {
       body: crmPayload,
     });
 
+    trackFormSubmit("whatsapp_lead_modal");
     window.open(url, "_blank");
     setIsOpen(false);
     setRequest(null);
