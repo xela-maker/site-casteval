@@ -2,3 +2,6 @@ project_id = "byhkitxlcaxbddssnypy"
 
 [functions.manage-users]
 verify_jwt = true
+
+[functions.send-lead-to-crm]
+verify_jwt = false

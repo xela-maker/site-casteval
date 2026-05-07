@@ -641,6 +641,20 @@ export default function EmpreendimentoDetalhes() {
       return;
     }
 
+    const crmPayload = {
+      nome,
+      email,
+      telefone: "",
+      mensagem,
+      interesse: empreendimentoNome,
+      origem: "empreendimento_interesse_form",
+      url_origem: window.location.href,
+    };
+
+    void supabase.functions.invoke("send-lead-to-crm", {
+      body: crmPayload,
+    });
+
     openForProperty(empreendimento.nome);
 
     await Swal.fire({

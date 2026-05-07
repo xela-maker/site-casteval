@@ -136,6 +136,20 @@ export const WhatsAppLeadCaptureModal = () => {
       console.error("Erro ao salvar lead da modal de WhatsApp:", error);
     }
 
+    const crmPayload = {
+      nome: trimmedName,
+      email: trimmedEmail,
+      telefone: phoneDigits,
+      mensagem: request.message,
+      interesse: "WhatsApp",
+      origem: "whatsapp_modal",
+      url_origem: window.location.href,
+    };
+
+    void supabase.functions.invoke("send-lead-to-crm", {
+      body: crmPayload,
+    });
+
     window.open(url, "_blank");
     setIsOpen(false);
     setRequest(null);
