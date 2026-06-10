@@ -132,7 +132,7 @@ export const AdminHeader = () => {
                 <Home size={16} style={{ marginRight: "6px" }} />
                 Nova Casa
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => navigate("/admin/blog/new")}>
+              <DropdownMenuItem onClick={() => navigate("/admin/blog/novo")}>
                 <FileText size={16} style={{ marginRight: "6px" }} />
                 Novo Post
               </DropdownMenuItem>

@@ -394,7 +394,7 @@ export default function Blog() {
             </div>
             <div style={{ display: "flex", justifyContent: "flex-end" }}>
               <button
-                onClick={() => navigate('/admin/blog/new')}
+                onClick={() => navigate('/admin/blog/novo')}
                 style={{
                   display: "inline-flex",
                   alignItems: "center",
@@ -432,7 +432,7 @@ export default function Blog() {
           icon={Plus}
           title="Nenhum post encontrado"
           description="Crie seu primeiro post para começar"
-          onAction={() => navigate('/admin/blog/new')}
+          onAction={() => navigate('/admin/blog/novo')}
           actionLabel="Criar Post"
         />
       </div>
@@ -490,7 +490,7 @@ export default function Blog() {
           </div>
           <div style={{ display: "flex", justifyContent: "flex-end" }}>
             <button
-              onClick={() => navigate('/admin/blog/new')}
+              onClick={() => navigate('/admin/blog/novo')}
               style={{
                 display: "inline-flex",
                 alignItems: "center",

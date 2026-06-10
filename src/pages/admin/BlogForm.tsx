@@ -169,17 +169,20 @@ const styles = {
   },
 };
 
+const isValidUUID = (value?: string): boolean =>
+  !!value && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
+
 export default function BlogForm() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const isEdit = !!id;
+  const isEdit = isValidUUID(id);
 
   const [formData, setFormData] = useState<BlogPostData>(initialData);
   const [tagsInput, setTagsInput] = useState("");
   const [keywordsInput, setKeywordsInput] = useState("");
 
-  const { data: post, isLoading } = useBlogPost(id);
+  const { data: post, isLoading } = useBlogPost(isEdit ? id : undefined);
   const createMutation = useCreateBlogPost();
   const updateMutation = useUpdateBlogPost();
 
@@ -314,8 +317,10 @@ export default function BlogForm() {
       }
     }
 
+    const { id: _id, created_at: _createdAt, updated_at: _updatedAt, ...rest } = formData as any;
+
     const dataToSave = {
-      ...formData,
+      ...rest,
       is_published: status === "publicado",
       data_publicacao:
         status === "publicado" && !formData.data_publicacao ? new Date().toISOString() : formData.data_publicacao,
@@ -323,13 +328,19 @@ export default function BlogForm() {
       imagem_card: extractImageUrl(formData.imagem_card as any),
     };
 
-    if (isEdit && id) {
-      await updateMutation.mutateAsync({ id, data: dataToSave });
-    } else {
-      await createMutation.mutateAsync(dataToSave);
+    try {
+      if (isEdit && id) {
+        await updateMutation.mutateAsync({ id, data: dataToSave });
+      } else {
+        await createMutation.mutateAsync({
+          ...dataToSave,
+          autor_id: user?.id ?? null,
+        });
+      }
+      navigate("/admin/blog");
+    } catch (error) {
+      console.error("Erro ao salvar post:", error);
     }
-
-    navigate("/admin/blog");
   };
 
   const updateField = (field: keyof BlogPostData, value: any) => {

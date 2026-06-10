@@ -111,9 +111,9 @@ export function useCreateBlogPost() {
       queryClient.invalidateQueries({ queryKey: ['blog-posts'] });
       toast.success('Post criado com sucesso');
     },
-    onError: (error) => {
+    onError: (error: any) => {
       console.error('Erro ao criar post:', error);
-      toast.error('Erro ao criar post');
+      toast.error(error?.message ? `Erro ao criar post: ${error.message}` : 'Erro ao criar post');
     },
   });
 }
@@ -123,9 +123,10 @@ export function useUpdateBlogPost() {
 
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<BlogPost> }) => {
+      const { id: _id, created_at: _createdAt, updated_at: _updatedAt, ...updateData } = data as any;
       const { error } = await supabase
         .from('st_blog_posts')
-        .update(data)
+        .update(updateData)
         .eq('id', id);
       if (error) throw error;
     },
@@ -134,9 +135,9 @@ export function useUpdateBlogPost() {
       queryClient.invalidateQueries({ queryKey: ['blog-post'] });
       toast.success('Post atualizado com sucesso');
     },
-    onError: (error) => {
+    onError: (error: any) => {
       console.error('Erro ao atualizar post:', error);
-      toast.error('Erro ao atualizar post');
+      toast.error(error?.message ? `Erro ao atualizar post: ${error.message}` : 'Erro ao atualizar post');
     },
   });
 }

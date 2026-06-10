@@ -604,7 +604,7 @@ export default function Dashboard() {
               <QuickAction
                 label="Publicar no Blog"
                 icon={FileText}
-                onClick={() => navigate("/admin/blog/new")}
+                onClick={() => navigate("/admin/blog/novo")}
                 color={info}
               />
             </div>
