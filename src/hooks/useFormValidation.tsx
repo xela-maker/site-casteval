@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { z } from 'zod';
 import { useConfig } from './useConfig';
+import { supabase } from '@/integrations/supabase/client';
 
 export const contactFormSchema = z.object({
   firstName: z.string()
@@ -80,13 +81,44 @@ export const useFormValidation = () => {
         return false;
       }
 
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Success - send to WhatsApp
+      const fullName = `${data.firstName} ${data.lastName}`.trim();
+      const phoneDigits = data.phone.replace(/\D/g, '');
+
+      const { error } = await supabase.from('st_contatos').insert({
+        nome: fullName,
+        email: data.email,
+        telefone: phoneDigits,
+        interesse: data.interest || null,
+        mensagem: data.message,
+        status: 'novo',
+        origem: 'contato_form',
+        url_origem: window.location.href,
+      });
+
+      if (error) {
+        console.error('Erro ao salvar contato:', error);
+        return false;
+      }
+
+      const { error: crmError } = await supabase.functions.invoke('send-lead-to-crm', {
+        body: {
+          nome: fullName,
+          email: data.email,
+          telefone: phoneDigits,
+          mensagem: data.message,
+          interesse: data.interest || 'Não especificado',
+          origem: 'contato_form',
+          url_origem: window.location.href,
+        },
+      });
+
+      if (crmError) {
+        console.error('Erro ao enviar lead para o CRM:', crmError);
+      }
+
       const message = `🏢 Nova mensagem de contato - Casteval
       
-👤 Nome: ${data.firstName} ${data.lastName}
+👤 Nome: ${fullName}
 📧 Email: ${data.email}
 📞 Telefone: ${data.phone}
 🎯 Interesse: ${data.interest || 'Não especificado'}

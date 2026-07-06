@@ -13,6 +13,12 @@ interface LeadPayload {
   url_origem?: string | null;
 }
 
+const ORIGEM_VEICULO: Record<string, string> = {
+  whatsapp_modal: "WhatsApp - Site Casteval",
+  empreendimento_interesse_form: "Empreendimento - Site Casteval",
+  contato_form: "Contato - Site Casteval",
+};
+
 const buildEndpoint = () => {
   const baseUrl = (Deno.env.get("CRM_BASE_URL") || "https://cli43769-rest.vistahost.com.br").replace(/\/$/, "");
   const apiKey = Deno.env.get("CRM_API_KEY");
@@ -20,7 +26,30 @@ const buildEndpoint = () => {
     throw new Error("CRM_API_KEY não configurada");
   }
 
-  return `${baseUrl}/negocios/cadastrar?key=${encodeURIComponent(apiKey)}`;
+  const leadPath = Deno.env.get("CRM_LEAD_PATH") || "/lead/site";
+  return `${baseUrl}${leadPath}?key=${encodeURIComponent(apiKey)}`;
+};
+
+const buildCrmPayload = (lead: LeadPayload) => {
+  const mensagemParts = [lead.mensagem || ""];
+  if (lead.url_origem) {
+    mensagemParts.push(`URL: ${lead.url_origem}`);
+  }
+
+  const origem = lead.origem || "site-casteval";
+
+  return {
+    cadastro: {
+      lead: {
+        nome: lead.nome,
+        email: lead.email,
+        fone: lead.telefone || "",
+        mensagem: mensagemParts.filter(Boolean).join("\n"),
+        veiculo: ORIGEM_VEICULO[origem] || "Site Casteval",
+        interesse: lead.interesse || "",
+      },
+    },
+  };
 };
 
 Deno.serve(async (req) => {
@@ -42,16 +71,7 @@ Deno.serve(async (req) => {
     }
 
     const endpoint = buildEndpoint();
-
-    const crmPayload = {
-      nome: lead.nome,
-      email: lead.email,
-      telefone: lead.telefone || "",
-      mensagem: lead.mensagem || "",
-      interesse: lead.interesse || "",
-      origem: lead.origem || "site-casteval",
-      url_origem: lead.url_origem || "",
-    };
+    const crmPayload = buildCrmPayload(lead);
 
     const response = await fetch(endpoint, {
       method: "POST",

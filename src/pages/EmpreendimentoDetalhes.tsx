@@ -651,9 +651,13 @@ export default function EmpreendimentoDetalhes() {
       url_origem: window.location.href,
     };
 
-    void supabase.functions.invoke("send-lead-to-crm", {
+    const { error: crmError } = await supabase.functions.invoke("send-lead-to-crm", {
       body: crmPayload,
     });
+
+    if (crmError) {
+      console.error("Erro ao enviar lead para o CRM:", crmError);
+    }
 
     openForProperty(empreendimento.nome);
 

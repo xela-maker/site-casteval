@@ -147,9 +147,13 @@ export const WhatsAppLeadCaptureModal = () => {
       url_origem: window.location.href,
     };
 
-    void supabase.functions.invoke("send-lead-to-crm", {
+    const { error: crmError } = await supabase.functions.invoke("send-lead-to-crm", {
       body: crmPayload,
     });
+
+    if (crmError) {
+      console.error("Erro ao enviar lead para o CRM:", crmError);
+    }
 
     trackFormSubmit("whatsapp_lead_modal");
     window.open(url, "_blank");
