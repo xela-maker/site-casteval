@@ -14,6 +14,11 @@ interface LeadPayload {
   interesse?: string | null;
   origem?: string | null;
   url_origem?: string | null;
+  utm_source?: string | null;
+  utm_medium?: string | null;
+  utm_campaign?: string | null;
+  utm_term?: string | null;
+  utm_content?: string | null;
 }
 
 const ORIGEM_VEICULO: Record<string, string> = {
@@ -33,11 +38,29 @@ const buildEndpoint = () => {
   return { baseUrl, apiKey, endpoint: `${baseUrl}${leadPath}?key=${encodeURIComponent(apiKey)}` };
 };
 
+const appendUtmToMessage = (lead: LeadPayload, mensagemParts: string[]) => {
+  const utmEntries = [
+    ["utm_source", lead.utm_source],
+    ["utm_medium", lead.utm_medium],
+    ["utm_campaign", lead.utm_campaign],
+    ["utm_term", lead.utm_term],
+    ["utm_content", lead.utm_content],
+  ].filter(([, value]) => value);
+
+  if (utmEntries.length === 0) return;
+
+  mensagemParts.push(
+    "--- Rastreamento UTM ---",
+    ...utmEntries.map(([key, value]) => `${key}: ${value}`),
+  );
+};
+
 const buildLeadFields = (lead: LeadPayload) => {
   const mensagemParts = [lead.mensagem || ""];
   if (lead.url_origem) {
     mensagemParts.push(`URL: ${lead.url_origem}`);
   }
+  appendUtmToMessage(lead, mensagemParts);
 
   const origem = lead.origem || "site-casteval";
 
@@ -48,6 +71,11 @@ const buildLeadFields = (lead: LeadPayload) => {
     mensagem: mensagemParts.filter(Boolean).join("\n"),
     veiculo: ORIGEM_VEICULO[origem] || "Site Casteval",
     interesse: lead.interesse || "",
+    utm_source: lead.utm_source || "",
+    utm_medium: lead.utm_medium || "",
+    utm_campaign: lead.utm_campaign || "",
+    utm_term: lead.utm_term || "",
+    utm_content: lead.utm_content || "",
   };
 };
 

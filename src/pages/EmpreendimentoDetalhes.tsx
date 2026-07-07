@@ -13,6 +13,7 @@ import { createEmpreendimentoSchema } from "@/lib/structuredData";
 import { useSwipeGesture } from "@/hooks/useSwipeGesture";
 import { supabase } from "@/integrations/supabase/client";
 import { sendLeadToCrm } from "@/lib/sendLeadToCrm";
+import { getStoredUtmParams, utmParamsToRecord } from "@/lib/utmTracking";
 import Swal from "sweetalert2";
 import casaVolpiHero from "@/assets/casa-volpi-hero.jpg";
 import familiaCta from "@/assets/familia-cta.jpg";
@@ -613,6 +614,8 @@ export default function EmpreendimentoDetalhes() {
     const empreendimentoNome = result?.nome || "Empreendimento";
     const empreendimentoId = result?.id || null;
 
+    const utmFields = utmParamsToRecord(getStoredUtmParams());
+
     const { data: contato, error } = await supabase.from("st_contatos").insert({
       nome,
       email,
@@ -623,6 +626,7 @@ export default function EmpreendimentoDetalhes() {
       origem: "empreendimento_interesse_form",
       url_origem: window.location.href,
       crm_status: "pending",
+      ...utmFields,
     }).select("id").single();
 
     if (error) {
@@ -652,6 +656,7 @@ export default function EmpreendimentoDetalhes() {
       interesse: empreendimentoNome,
       origem: "empreendimento_interesse_form",
       url_origem: window.location.href,
+      ...utmFields,
     });
 
     const waMessage = `${messages.property(empreendimentoNome)}\n\nNome: ${nome}\nE-mail: ${email}\nMensagem: ${mensagem}`;

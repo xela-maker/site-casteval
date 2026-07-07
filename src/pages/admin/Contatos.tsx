@@ -32,6 +32,11 @@ interface Contato {
   crm_status: string | null;
   crm_enviado_em: string | null;
   crm_erro: string | null;
+  utm_source: string | null;
+  utm_medium: string | null;
+  utm_campaign: string | null;
+  utm_term: string | null;
+  utm_content: string | null;
 }
 
 export default function Contatos() {
@@ -911,6 +916,46 @@ export default function Contatos() {
                   </div>
                 </div>
               </div>
+
+              {(selectedContato.utm_source ||
+                selectedContato.utm_medium ||
+                selectedContato.utm_campaign ||
+                selectedContato.utm_term ||
+                selectedContato.utm_content) && (
+                <div style={{
+                  marginBottom: '24px',
+                  padding: '16px',
+                  borderRadius: '12px',
+                  background: surface2,
+                }}>
+                  <div style={{
+                    fontSize: '12px',
+                    fontWeight: 600,
+                    color: textMuted,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.05em',
+                    marginBottom: '12px',
+                  }}>
+                    Rastreamento UTM
+                  </div>
+                  <div style={{ display: 'grid', gap: '8px' }}>
+                    {[
+                      ['Source', selectedContato.utm_source],
+                      ['Medium', selectedContato.utm_medium],
+                      ['Campaign', selectedContato.utm_campaign],
+                      ['Term', selectedContato.utm_term],
+                      ['Content', selectedContato.utm_content],
+                    ]
+                      .filter(([, value]) => value)
+                      .map(([label, value]) => (
+                        <div key={label} style={{ fontSize: '13px', color: text }}>
+                          <span style={{ color: textMuted, fontWeight: 600 }}>{label}: </span>
+                          {value}
+                        </div>
+                      ))}
+                  </div>
+                </div>
+              )}
 
               {/* Origem */}
               {selectedContato.origem && (

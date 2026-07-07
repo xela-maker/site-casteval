@@ -1048,6 +1048,11 @@ export type Database = {
           telefone: string | null
           updated_at: string | null
           url_origem: string | null
+          utm_campaign: string | null
+          utm_content: string | null
+          utm_medium: string | null
+          utm_source: string | null
+          utm_term: string | null
         }
         Insert: {
           atendido_em?: string | null
@@ -1068,6 +1073,11 @@ export type Database = {
           telefone?: string | null
           updated_at?: string | null
           url_origem?: string | null
+          utm_campaign?: string | null
+          utm_content?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+          utm_term?: string | null
         }
         Update: {
           atendido_em?: string | null
@@ -1088,6 +1098,11 @@ export type Database = {
           telefone?: string | null
           updated_at?: string | null
           url_origem?: string | null
+          utm_campaign?: string | null
+          utm_content?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+          utm_term?: string | null
         }
         Relationships: [
           {

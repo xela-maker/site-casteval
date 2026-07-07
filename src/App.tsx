@@ -8,6 +8,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { AdminPreferencesProvider } from "@/contexts/AdminPreferencesContext";
 import { ScrollToTop } from "@/components/ScrollToTop";
 import { TrackingScripts } from "@/components/TrackingScripts";
+import { UtmCapture } from "@/components/UtmCapture";
 import { WhatsAppLeadCaptureModal } from "@/components/WhatsAppLeadCaptureModal";
 import Index from "./pages/Index";
 import Empreendimentos from "./pages/Empreendimentos";
@@ -55,6 +56,7 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <BrowserRouter>
       <ScrollToTop />
+      <UtmCapture />
       <TrackingScripts />
       <AuthProvider>
         <TooltipProvider>

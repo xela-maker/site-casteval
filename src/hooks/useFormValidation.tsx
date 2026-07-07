@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { useConfig } from './useConfig';
 import { supabase } from '@/integrations/supabase/client';
 import { sendLeadToCrm } from '@/lib/sendLeadToCrm';
+import { getStoredUtmParams, utmParamsToRecord } from '@/lib/utmTracking';
 
 export const contactFormSchema = z.object({
   firstName: z.string()
@@ -85,6 +86,8 @@ export const useFormValidation = () => {
       const fullName = `${data.firstName} ${data.lastName}`.trim();
       const phoneDigits = data.phone.replace(/\D/g, '');
 
+      const utmFields = utmParamsToRecord(getStoredUtmParams());
+
       const { data: contato, error } = await supabase.from('st_contatos').insert({
         nome: fullName,
         email: data.email,
@@ -95,6 +98,7 @@ export const useFormValidation = () => {
         origem: 'contato_form',
         url_origem: window.location.href,
         crm_status: 'pending',
+        ...utmFields,
       }).select('id').single();
 
       if (error) {
@@ -111,6 +115,7 @@ export const useFormValidation = () => {
         interesse: data.interest || 'Não especificado',
         origem: 'contato_form',
         url_origem: window.location.href,
+        ...utmFields,
       });
 
       const message = `🏢 Nova mensagem de contato - Casteval
