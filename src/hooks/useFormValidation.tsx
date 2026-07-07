@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { z } from 'zod';
 import { useConfig } from './useConfig';
 import { supabase } from '@/integrations/supabase/client';
+import { sendLeadToCrm } from '@/lib/sendLeadToCrm';
 
 export const contactFormSchema = z.object({
   firstName: z.string()
@@ -84,7 +85,7 @@ export const useFormValidation = () => {
       const fullName = `${data.firstName} ${data.lastName}`.trim();
       const phoneDigits = data.phone.replace(/\D/g, '');
 
-      const { error } = await supabase.from('st_contatos').insert({
+      const { data: contato, error } = await supabase.from('st_contatos').insert({
         nome: fullName,
         email: data.email,
         telefone: phoneDigits,
@@ -93,28 +94,24 @@ export const useFormValidation = () => {
         status: 'novo',
         origem: 'contato_form',
         url_origem: window.location.href,
-      });
+        crm_status: 'pending',
+      }).select('id').single();
 
       if (error) {
         console.error('Erro ao salvar contato:', error);
         return false;
       }
 
-      const { error: crmError } = await supabase.functions.invoke('send-lead-to-crm', {
-        body: {
-          nome: fullName,
-          email: data.email,
-          telefone: phoneDigits,
-          mensagem: data.message,
-          interesse: data.interest || 'Não especificado',
-          origem: 'contato_form',
-          url_origem: window.location.href,
-        },
+      void sendLeadToCrm({
+        contato_id: contato.id,
+        nome: fullName,
+        email: data.email,
+        telefone: phoneDigits,
+        mensagem: data.message,
+        interesse: data.interest || 'Não especificado',
+        origem: 'contato_form',
+        url_origem: window.location.href,
       });
-
-      if (crmError) {
-        console.error('Erro ao enviar lead para o CRM:', crmError);
-      }
 
       const message = `🏢 Nova mensagem de contato - Casteval
       

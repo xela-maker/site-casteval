@@ -1033,6 +1033,9 @@ export type Database = {
           atendido_em: string | null
           atendido_por: string | null
           created_at: string | null
+          crm_enviado_em: string | null
+          crm_erro: string | null
+          crm_status: string | null
           email: string
           empreendimento_id: string | null
           id: string
@@ -1050,6 +1053,9 @@ export type Database = {
           atendido_em?: string | null
           atendido_por?: string | null
           created_at?: string | null
+          crm_enviado_em?: string | null
+          crm_erro?: string | null
+          crm_status?: string | null
           email: string
           empreendimento_id?: string | null
           id?: string
@@ -1067,6 +1073,9 @@ export type Database = {
           atendido_em?: string | null
           atendido_por?: string | null
           created_at?: string | null
+          crm_enviado_em?: string | null
+          crm_erro?: string | null
+          crm_status?: string | null
           email?: string
           empreendimento_id?: string | null
           id?: string

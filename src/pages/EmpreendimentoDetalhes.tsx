@@ -12,6 +12,7 @@ import { useItensLazerWithIcons } from "@/hooks/useItensLazerWithIcons";
 import { createEmpreendimentoSchema } from "@/lib/structuredData";
 import { useSwipeGesture } from "@/hooks/useSwipeGesture";
 import { supabase } from "@/integrations/supabase/client";
+import { sendLeadToCrm } from "@/lib/sendLeadToCrm";
 import Swal from "sweetalert2";
 import casaVolpiHero from "@/assets/casa-volpi-hero.jpg";
 import familiaCta from "@/assets/familia-cta.jpg";
@@ -568,7 +569,7 @@ export default function EmpreendimentoDetalhes() {
   const [currentInfoIndex, setCurrentInfoIndex] = useState(0);
   const amenidadeIds = result?.amenidades || [];
   const { data: itensLazerWithIcons = [] } = useItensLazerWithIcons(amenidadeIds);
-  const { openForProperty } = useWhatsAppIntegration();
+  const { phoneNumber, messages } = useWhatsAppIntegration();
 
   const handleInterestSubmit = async () => {
     const nome = interestFormData.nome.trim();
@@ -612,7 +613,7 @@ export default function EmpreendimentoDetalhes() {
     const empreendimentoNome = result?.nome || "Empreendimento";
     const empreendimentoId = result?.id || null;
 
-    const { error } = await supabase.from("st_contatos").insert({
+    const { data: contato, error } = await supabase.from("st_contatos").insert({
       nome,
       email,
       mensagem,
@@ -621,7 +622,8 @@ export default function EmpreendimentoDetalhes() {
       status: "novo",
       origem: "empreendimento_interesse_form",
       url_origem: window.location.href,
-    });
+      crm_status: "pending",
+    }).select("id").single();
 
     if (error) {
       console.error("Erro ao salvar interesse do empreendimento:", error);
@@ -641,7 +643,8 @@ export default function EmpreendimentoDetalhes() {
       return;
     }
 
-    const crmPayload = {
+    void sendLeadToCrm({
+      contato_id: contato.id,
       nome,
       email,
       telefone: "",
@@ -649,17 +652,10 @@ export default function EmpreendimentoDetalhes() {
       interesse: empreendimentoNome,
       origem: "empreendimento_interesse_form",
       url_origem: window.location.href,
-    };
-
-    const { error: crmError } = await supabase.functions.invoke("send-lead-to-crm", {
-      body: crmPayload,
     });
 
-    if (crmError) {
-      console.error("Erro ao enviar lead para o CRM:", crmError);
-    }
-
-    openForProperty(empreendimento.nome);
+    const waMessage = `${messages.property(empreendimentoNome)}\n\nNome: ${nome}\nE-mail: ${email}\nMensagem: ${mensagem}`;
+    window.open(`https://wa.me/${phoneNumber}?text=${encodeURIComponent(waMessage)}`, "_blank");
 
     await Swal.fire({
       icon: "success",

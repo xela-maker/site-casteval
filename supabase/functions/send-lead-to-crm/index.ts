@@ -1,9 +1,12 @@
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
 interface LeadPayload {
+  contato_id?: string | null;
   nome: string;
   email: string;
   telefone?: string | null;
@@ -26,11 +29,11 @@ const buildEndpoint = () => {
     throw new Error("CRM_API_KEY não configurada");
   }
 
-  const leadPath = Deno.env.get("CRM_LEAD_PATH") || "/lead/site";
-  return `${baseUrl}${leadPath}?key=${encodeURIComponent(apiKey)}`;
+  const leadPath = Deno.env.get("CRM_LEAD_PATH") || "/lead";
+  return { baseUrl, apiKey, endpoint: `${baseUrl}${leadPath}?key=${encodeURIComponent(apiKey)}` };
 };
 
-const buildCrmPayload = (lead: LeadPayload) => {
+const buildLeadFields = (lead: LeadPayload) => {
   const mensagemParts = [lead.mensagem || ""];
   if (lead.url_origem) {
     mensagemParts.push(`URL: ${lead.url_origem}`);
@@ -39,17 +42,94 @@ const buildCrmPayload = (lead: LeadPayload) => {
   const origem = lead.origem || "site-casteval";
 
   return {
-    cadastro: {
-      lead: {
-        nome: lead.nome,
-        email: lead.email,
-        fone: lead.telefone || "",
-        mensagem: mensagemParts.filter(Boolean).join("\n"),
-        veiculo: ORIGEM_VEICULO[origem] || "Site Casteval",
-        interesse: lead.interesse || "",
-      },
-    },
+    nome: lead.nome,
+    email: lead.email,
+    fone: lead.telefone || "",
+    mensagem: mensagemParts.filter(Boolean).join("\n"),
+    veiculo: ORIGEM_VEICULO[origem] || "Site Casteval",
+    interesse: lead.interesse || "",
   };
+};
+
+const sendLeadToVista = async (endpoint: string, leadFields: ReturnType<typeof buildLeadFields>) => {
+  const wrappedCadastro = { lead: leadFields };
+  const formBody = `cadastro=${encodeURIComponent(JSON.stringify(wrappedCadastro))}`;
+
+  const formResponse = await fetch(endpoint, {
+    method: "POST",
+    headers: {
+      Accept: "application/json",
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
+    body: formBody,
+  });
+
+  const formRawBody = await formResponse.text();
+  if (formResponse.ok) {
+    return { ok: true as const, status: formResponse.status, rawBody: formRawBody, strategy: "form-lead-wrapper" };
+  }
+
+  console.error("CRM form-lead-wrapper falhou:", formResponse.status, formRawBody);
+
+  const jsonResponse = await fetch(endpoint, {
+    method: "POST",
+    headers: {
+      Accept: "application/json",
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ cadastro: leadFields }),
+  });
+
+  const jsonRawBody = await jsonResponse.text();
+  if (jsonResponse.ok) {
+    return { ok: true as const, status: jsonResponse.status, rawBody: jsonRawBody, strategy: "json-flat-cadastro" };
+  }
+
+  console.error("CRM json-flat-cadastro falhou:", jsonResponse.status, jsonRawBody);
+
+  return {
+    ok: false as const,
+    status: jsonResponse.status,
+    rawBody: jsonRawBody || formRawBody,
+    strategy: "json-flat-cadastro",
+  };
+};
+
+const getAdminClient = () => {
+  const supabaseUrl = Deno.env.get("SUPABASE_URL");
+  const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+
+  if (!supabaseUrl || !serviceRoleKey) {
+    return null;
+  }
+
+  return createClient(supabaseUrl, serviceRoleKey);
+};
+
+const updateContatoCrmStatus = async (
+  contatoId: string,
+  status: "success" | "error",
+  erro?: string,
+) => {
+  const admin = getAdminClient();
+  if (!admin) {
+    console.error("Supabase admin client indisponível para atualizar crm_status");
+    return;
+  }
+
+  const { error } = await admin
+    .from("st_contatos")
+    .update({
+      crm_status: status,
+      crm_enviado_em: new Date().toISOString(),
+      crm_erro: erro ? erro.slice(0, 1000) : null,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", contatoId);
+
+  if (error) {
+    console.error("Erro ao atualizar crm_status do contato:", error);
+  }
 };
 
 Deno.serve(async (req) => {
@@ -70,27 +150,22 @@ Deno.serve(async (req) => {
       throw new Error("Payload inválido: nome e email são obrigatórios");
     }
 
-    const endpoint = buildEndpoint();
-    const crmPayload = buildCrmPayload(lead);
+    const { endpoint } = buildEndpoint();
+    const leadFields = buildLeadFields(lead);
+    const result = await sendLeadToVista(endpoint, leadFields);
 
-    const response = await fetch(endpoint, {
-      method: "POST",
-      headers: {
-        Accept: "application/json",
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(crmPayload),
-    });
+    if (!result.ok) {
+      if (lead.contato_id) {
+        await updateContatoCrmStatus(lead.contato_id, "error", result.rawBody);
+      }
 
-    const rawBody = await response.text();
-    if (!response.ok) {
-      console.error("Erro CRM Loft:", response.status, rawBody);
       return new Response(
         JSON.stringify({
           success: false,
-          status: response.status,
+          status: result.status,
           error: "Falha ao enviar lead para o CRM",
-          details: rawBody,
+          details: result.rawBody,
+          strategy: result.strategy,
         }),
         {
           status: 502,
@@ -99,10 +174,15 @@ Deno.serve(async (req) => {
       );
     }
 
+    if (lead.contato_id) {
+      await updateContatoCrmStatus(lead.contato_id, "success");
+    }
+
     return new Response(
       JSON.stringify({
         success: true,
-        crm_response: rawBody,
+        strategy: result.strategy,
+        crm_response: result.rawBody,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );

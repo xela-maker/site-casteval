@@ -8,9 +8,15 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import { Mail, Phone, Calendar, MessageSquare, Search, Filter, X } from 'lucide-react';
+import { Mail, Phone, Calendar, MessageSquare, Search, Filter, X, CheckCircle2, XCircle, Clock, Minus } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 interface Contato {
   id: string;
@@ -23,6 +29,9 @@ interface Contato {
   created_at: string;
   empreendimento_id: string | null;
   origem: string | null;
+  crm_status: string | null;
+  crm_enviado_em: string | null;
+  crm_erro: string | null;
 }
 
 export default function Contatos() {
@@ -114,6 +123,54 @@ export default function Contatos() {
   const whatsappCount = contatos.filter((c) => c.origem === 'whatsapp_modal').length;
   const empreendimentoCount = contatos.filter((c) => c.origem === 'empreendimento_interesse_form').length;
 
+  const getCrmStatusIndicator = (contato: Contato) => {
+    const configs: Record<string, { icon: typeof CheckCircle2; color: string; label: string }> = {
+      success: { icon: CheckCircle2, color: success, label: 'Enviado ao Loft CRM' },
+      error: { icon: XCircle, color: danger, label: 'Falha no envio ao Loft CRM' },
+      pending: { icon: Clock, color: brand, label: 'Envio ao Loft CRM pendente' },
+    };
+
+    const config = contato.crm_status ? configs[contato.crm_status] : null;
+    const Icon = config?.icon ?? Minus;
+    const color = config?.color ?? textMuted;
+    const label = config?.label ?? 'Sem registro de envio ao Loft CRM';
+
+    const tooltipLines = [label];
+    if (contato.crm_enviado_em) {
+      tooltipLines.push(
+        `Última tentativa: ${format(new Date(contato.crm_enviado_em), 'dd/MM/yyyy HH:mm', { locale: ptBR })}`,
+      );
+    }
+    if (contato.crm_status === 'error' && contato.crm_erro) {
+      tooltipLines.push(contato.crm_erro);
+    }
+
+    return (
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <span
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: '32px',
+              height: '32px',
+              borderRadius: '8px',
+              background: `${color}15`,
+              cursor: 'help',
+            }}
+            onClick={(event) => event.stopPropagation()}
+          >
+            <Icon size={16} color={color} />
+          </span>
+        </TooltipTrigger>
+        <TooltipContent side="top" className="max-w-xs whitespace-pre-wrap">
+          {tooltipLines.join('\n')}
+        </TooltipContent>
+      </Tooltip>
+    );
+  };
+
   const getStatusBadge = (status: string) => {
     const statusConfig: Record<string, { bg: string; color: string; label: string }> = {
       novo: { bg: `${brand}20`, color: brand, label: 'Novo' },
@@ -162,6 +219,7 @@ export default function Contatos() {
   }
 
   return (
+    <TooltipProvider>
     <div style={{ padding: '0', minHeight: '100vh' }}>
       {/* Header */}
       <div style={{ marginBottom: '32px' }}>
@@ -421,6 +479,15 @@ export default function Contatos() {
                 }}>Interesse</th>
                 <th style={{
                   padding: '16px 20px',
+                  textAlign: 'center',
+                  fontSize: '12px',
+                  fontWeight: 600,
+                  color: textMuted,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em',
+                }}>Loft CRM</th>
+                <th style={{
+                  padding: '16px 20px',
                   textAlign: 'left',
                   fontSize: '12px',
                   fontWeight: 600,
@@ -433,7 +500,7 @@ export default function Contatos() {
             <tbody>
               {filteredContatos.length === 0 ? (
                 <tr>
-                  <td colSpan={6} style={{
+                  <td colSpan={7} style={{
                     padding: '48px 20px',
                     textAlign: 'center',
                     color: textMuted,
@@ -492,6 +559,12 @@ export default function Contatos() {
                       fontWeight: contato.origem === 'empreendimento_interesse_form' ? 700 : 400,
                     }}>
                       {contato.interesse || '-'}
+                    </td>
+                    <td style={{
+                      padding: '16px 20px',
+                      textAlign: 'center',
+                    }}>
+                      {getCrmStatusIndicator(contato)}
                     </td>
                     <td style={{
                       padding: '16px 20px',
@@ -790,6 +863,55 @@ export default function Contatos() {
                 </div>
               )}
 
+              {/* Loft CRM */}
+              <div style={{
+                marginBottom: '24px',
+                padding: '16px',
+                borderRadius: '12px',
+                background: surface2,
+              }}>
+                <div style={{
+                  fontSize: '12px',
+                  fontWeight: 600,
+                  color: textMuted,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em',
+                  marginBottom: '12px',
+                }}>
+                  Integração Loft CRM
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  {getCrmStatusIndicator(selectedContato)}
+                  <div>
+                    <div style={{ fontSize: '14px', color: text, fontWeight: 600 }}>
+                      {selectedContato.crm_status === 'success'
+                        ? 'Lead enviado com sucesso'
+                        : selectedContato.crm_status === 'error'
+                          ? 'Falha no envio'
+                          : selectedContato.crm_status === 'pending'
+                            ? 'Envio pendente'
+                            : 'Sem registro de envio'}
+                    </div>
+                    {selectedContato.crm_enviado_em && (
+                      <div style={{ fontSize: '12px', color: textMuted, marginTop: '4px' }}>
+                        {format(new Date(selectedContato.crm_enviado_em), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                      </div>
+                    )}
+                    {selectedContato.crm_status === 'error' && selectedContato.crm_erro && (
+                      <div style={{
+                        fontSize: '12px',
+                        color: danger,
+                        marginTop: '8px',
+                        lineHeight: 1.5,
+                        whiteSpace: 'pre-wrap',
+                      }}>
+                        {selectedContato.crm_erro}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
               {/* Origem */}
               {selectedContato.origem && (
                 <div style={{
@@ -902,5 +1024,6 @@ export default function Contatos() {
         }
       `}</style>
     </div>
+    </TooltipProvider>
   );
 }

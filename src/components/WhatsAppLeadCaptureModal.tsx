@@ -16,6 +16,7 @@ import {
   WHATSAPP_LEAD_OPEN_EVENT,
   WhatsAppLeadRequest,
 } from "@/lib/whatsappLeadGate";
+import { sendLeadToCrm } from "@/lib/sendLeadToCrm";
 
 interface LeadFormData {
   name: string;
@@ -122,7 +123,7 @@ export const WhatsAppLeadCaptureModal = () => {
       }),
     );
 
-    const { error } = await supabase.from("st_contatos").insert({
+    const { data: contato, error } = await supabase.from("st_contatos").insert({
       nome: trimmedName,
       email: trimmedEmail,
       telefone: phoneDigits,
@@ -131,28 +132,22 @@ export const WhatsAppLeadCaptureModal = () => {
       status: "novo",
       origem: "whatsapp_modal",
       url_origem: window.location.href,
-    });
+      crm_status: "pending",
+    }).select("id").single();
 
     if (error) {
       console.error("Erro ao salvar lead da modal de WhatsApp:", error);
-    }
-
-    const crmPayload = {
-      nome: trimmedName,
-      email: trimmedEmail,
-      telefone: phoneDigits,
-      mensagem: request.message,
-      interesse: "WhatsApp",
-      origem: "whatsapp_modal",
-      url_origem: window.location.href,
-    };
-
-    const { error: crmError } = await supabase.functions.invoke("send-lead-to-crm", {
-      body: crmPayload,
-    });
-
-    if (crmError) {
-      console.error("Erro ao enviar lead para o CRM:", crmError);
+    } else {
+      void sendLeadToCrm({
+        contato_id: contato.id,
+        nome: trimmedName,
+        email: trimmedEmail,
+        telefone: phoneDigits,
+        mensagem: request.message,
+        interesse: "WhatsApp",
+        origem: "whatsapp_modal",
+        url_origem: window.location.href,
+      });
     }
 
     trackFormSubmit("whatsapp_lead_modal");
