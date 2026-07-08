@@ -7,7 +7,12 @@ export const UtmCapture = () => {
 
   useEffect(() => {
     captureUtmFromSearch(location.search);
-  }, [location.search]);
+
+    // Garante captura mesmo se o React Router normalizar a URL depois.
+    if (typeof window !== "undefined" && window.location.search) {
+      captureUtmFromSearch(window.location.search);
+    }
+  }, [location.search, location.pathname]);
 
   return null;
 };

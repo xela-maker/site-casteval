@@ -17,7 +17,7 @@ import {
   WhatsAppLeadRequest,
 } from "@/lib/whatsappLeadGate";
 import { sendLeadToCrm } from "@/lib/sendLeadToCrm";
-import { getStoredUtmParams, utmParamsToRecord } from "@/lib/utmTracking";
+import { getLeadTrackingFields, getLeadTrackingFieldsForDb } from "@/lib/utmTracking";
 import { formatPhoneMask, getPhoneDigits } from "@/lib/phoneUtils";
 
 interface LeadFormData {
@@ -113,7 +113,8 @@ export const WhatsAppLeadCaptureModal = () => {
       }),
     );
 
-    const utmFields = utmParamsToRecord(getStoredUtmParams());
+    const utmFields = getLeadTrackingFieldsForDb();
+    const crmTracking = getLeadTrackingFields();
 
     const { error } = await supabase.from("st_contatos").insert({
       nome: trimmedName,
@@ -139,7 +140,7 @@ export const WhatsAppLeadCaptureModal = () => {
         interesse: "WhatsApp",
         origem: "whatsapp_modal",
         url_origem: window.location.href,
-        ...utmFields,
+        ...crmTracking,
       });
     }
 

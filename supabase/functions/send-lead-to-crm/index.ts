@@ -19,6 +19,12 @@ interface LeadPayload {
   utm_campaign?: string | null;
   utm_term?: string | null;
   utm_content?: string | null;
+  gclid?: string | null;
+  utm_platform?: string | null;
+  utm_input?: string | null;
+  gad_source?: string | null;
+  gad_campaignid?: string | null;
+  gbraid?: string | null;
 }
 
 const ORIGEM_VEICULO: Record<string, string> = {
@@ -39,19 +45,25 @@ const buildEndpoint = () => {
 };
 
 const appendUtmToMessage = (lead: LeadPayload, mensagemParts: string[]) => {
-  const utmEntries = [
+  const trackingEntries = [
     ["utm_source", lead.utm_source],
     ["utm_medium", lead.utm_medium],
     ["utm_campaign", lead.utm_campaign],
     ["utm_term", lead.utm_term],
     ["utm_content", lead.utm_content],
+    ["gclid", lead.gclid],
+    ["utm_platform", lead.utm_platform],
+    ["utm_input", lead.utm_input],
+    ["gad_source", lead.gad_source],
+    ["gad_campaignid", lead.gad_campaignid],
+    ["gbraid", lead.gbraid],
   ].filter(([, value]) => value);
 
-  if (utmEntries.length === 0) return;
+  if (trackingEntries.length === 0) return;
 
   mensagemParts.push(
     "--- Rastreamento UTM ---",
-    ...utmEntries.map(([key, value]) => `${key}: ${value}`),
+    ...trackingEntries.map(([key, value]) => `${key}: ${value}`),
   );
 };
 

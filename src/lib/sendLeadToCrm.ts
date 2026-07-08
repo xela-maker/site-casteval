@@ -15,6 +15,12 @@ export interface LeadCrmPayload {
   utm_campaign?: string | null;
   utm_term?: string | null;
   utm_content?: string | null;
+  gclid?: string | null;
+  utm_platform?: string | null;
+  utm_input?: string | null;
+  gad_source?: string | null;
+  gad_campaignid?: string | null;
+  gbraid?: string | null;
 }
 
 export async function sendLeadToCrm(payload: LeadCrmPayload): Promise<boolean> {

@@ -13,7 +13,7 @@ import { createEmpreendimentoSchema } from "@/lib/structuredData";
 import { useSwipeGesture } from "@/hooks/useSwipeGesture";
 import { supabase } from "@/integrations/supabase/client";
 import { sendLeadToCrm } from "@/lib/sendLeadToCrm";
-import { getStoredUtmParams, utmParamsToRecord } from "@/lib/utmTracking";
+import { getLeadTrackingFields, getLeadTrackingFieldsForDb } from "@/lib/utmTracking";
 import { formatPhoneMask, getPhoneDigits, isValidPhone } from "@/lib/phoneUtils";
 import Swal from "sweetalert2";
 import casaVolpiHero from "@/assets/casa-volpi-hero.jpg";
@@ -634,7 +634,8 @@ export default function EmpreendimentoDetalhes() {
     const empreendimentoNome = result?.nome || "Empreendimento";
     const empreendimentoId = result?.id || null;
 
-    const utmFields = utmParamsToRecord(getStoredUtmParams());
+    const utmFields = getLeadTrackingFieldsForDb();
+    const crmTracking = getLeadTrackingFields();
 
     const { error } = await supabase.from("st_contatos").insert({
       nome,
@@ -676,7 +677,7 @@ export default function EmpreendimentoDetalhes() {
       interesse: empreendimentoNome,
       origem: "empreendimento_interesse_form",
       url_origem: window.location.href,
-      ...utmFields,
+      ...crmTracking,
     });
 
     const waMessage = `${messages.property(empreendimentoNome)}\n\nNome: ${nome}\nE-mail: ${email}\nTelefone: ${formatPhoneMask(interestFormData.telefone)}\nMensagem: ${mensagem}`;
