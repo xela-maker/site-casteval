@@ -88,7 +88,7 @@ export const useFormValidation = () => {
 
       const utmFields = utmParamsToRecord(getStoredUtmParams());
 
-      const { data: contato, error } = await supabase.from('st_contatos').insert({
+      const { error } = await supabase.from('st_contatos').insert({
         nome: fullName,
         email: data.email,
         telefone: phoneDigits,
@@ -99,15 +99,14 @@ export const useFormValidation = () => {
         url_origem: window.location.href,
         crm_status: 'pending',
         ...utmFields,
-      }).select('id').single();
+      });
 
       if (error) {
         console.error('Erro ao salvar contato:', error);
         return false;
       }
 
-      void sendLeadToCrm({
-        contato_id: contato.id,
+      await sendLeadToCrm({
         nome: fullName,
         email: data.email,
         telefone: phoneDigits,

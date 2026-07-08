@@ -126,7 +126,7 @@ export const WhatsAppLeadCaptureModal = () => {
 
     const utmFields = utmParamsToRecord(getStoredUtmParams());
 
-    const { data: contato, error } = await supabase.from("st_contatos").insert({
+    const { error } = await supabase.from("st_contatos").insert({
       nome: trimmedName,
       email: trimmedEmail,
       telefone: phoneDigits,
@@ -137,13 +137,12 @@ export const WhatsAppLeadCaptureModal = () => {
       url_origem: window.location.href,
       crm_status: "pending",
       ...utmFields,
-    }).select("id").single();
+    });
 
     if (error) {
       console.error("Erro ao salvar lead da modal de WhatsApp:", error);
     } else {
-      void sendLeadToCrm({
-        contato_id: contato.id,
+      await sendLeadToCrm({
         nome: trimmedName,
         email: trimmedEmail,
         telefone: phoneDigits,

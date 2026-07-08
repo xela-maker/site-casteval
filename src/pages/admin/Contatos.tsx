@@ -11,6 +11,7 @@ import { toast } from 'sonner';
 import { Mail, Phone, Calendar, MessageSquare, Search, Filter, X, CheckCircle2, XCircle, Clock, Minus } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { sendLeadToCrm } from '@/lib/sendLeadToCrm';
 import {
   Tooltip,
   TooltipContent,
@@ -37,6 +38,7 @@ interface Contato {
   utm_campaign: string | null;
   utm_term: string | null;
   utm_content: string | null;
+  url_origem: string | null;
 }
 
 export default function Contatos() {
@@ -46,6 +48,7 @@ export default function Contatos() {
   const [statusFilter, setStatusFilter] = useState<string>('todos');
   const [searchTerm, setSearchTerm] = useState('');
   const [originTab, setOriginTab] = useState<'formulario' | 'whatsapp' | 'empreendimento'>('formulario');
+  const [retryingCrmId, setRetryingCrmId] = useState<string | null>(null);
 
   // Theme colors
   const theme = typeof document !== 'undefined' ? document.documentElement.getAttribute("data-admin-theme") || "dark" : "dark";
@@ -82,6 +85,45 @@ export default function Contatos() {
       toast.error('Erro ao carregar contatos');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const retryCrmSend = async (contato: Contato) => {
+    setRetryingCrmId(contato.id);
+    try {
+      await supabase
+        .from('st_contatos')
+        .update({ crm_status: 'pending', crm_erro: null, updated_at: new Date().toISOString() })
+        .eq('id', contato.id);
+
+      const ok = await sendLeadToCrm({
+        contato_id: contato.id,
+        nome: contato.nome,
+        email: contato.email,
+        telefone: contato.telefone,
+        mensagem: contato.mensagem,
+        interesse: contato.interesse,
+        origem: contato.origem,
+        url_origem: contato.url_origem,
+        utm_source: contato.utm_source,
+        utm_medium: contato.utm_medium,
+        utm_campaign: contato.utm_campaign,
+        utm_term: contato.utm_term,
+        utm_content: contato.utm_content,
+      });
+
+      await loadContatos();
+
+      if (ok) {
+        toast.success('Lead reenviado ao Loft CRM');
+      } else {
+        toast.error('Falha ao reenviar lead ao Loft CRM');
+      }
+    } catch (error) {
+      console.error('Erro ao reenviar lead ao CRM:', error);
+      toast.error('Erro ao reenviar lead ao Loft CRM');
+    } finally {
+      setRetryingCrmId(null);
     }
   };
 
@@ -915,6 +957,27 @@ export default function Contatos() {
                     )}
                   </div>
                 </div>
+                {selectedContato.crm_status !== 'success' && (
+                  <button
+                    type="button"
+                    onClick={() => retryCrmSend(selectedContato)}
+                    disabled={retryingCrmId === selectedContato.id}
+                    style={{
+                      marginTop: '16px',
+                      padding: '10px 16px',
+                      borderRadius: '10px',
+                      border: `1px solid ${brand}`,
+                      background: `${brand}15`,
+                      color: brand,
+                      fontSize: '13px',
+                      fontWeight: 600,
+                      cursor: retryingCrmId === selectedContato.id ? 'wait' : 'pointer',
+                      opacity: retryingCrmId === selectedContato.id ? 0.7 : 1,
+                    }}
+                  >
+                    {retryingCrmId === selectedContato.id ? 'Reenviando...' : 'Reenviar ao Loft CRM'}
+                  </button>
+                )}
               </div>
 
               {(selectedContato.utm_source ||

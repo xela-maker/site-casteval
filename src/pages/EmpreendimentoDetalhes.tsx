@@ -616,7 +616,7 @@ export default function EmpreendimentoDetalhes() {
 
     const utmFields = utmParamsToRecord(getStoredUtmParams());
 
-    const { data: contato, error } = await supabase.from("st_contatos").insert({
+    const { error } = await supabase.from("st_contatos").insert({
       nome,
       email,
       mensagem,
@@ -627,7 +627,7 @@ export default function EmpreendimentoDetalhes() {
       url_origem: window.location.href,
       crm_status: "pending",
       ...utmFields,
-    }).select("id").single();
+    });
 
     if (error) {
       console.error("Erro ao salvar interesse do empreendimento:", error);
@@ -647,8 +647,7 @@ export default function EmpreendimentoDetalhes() {
       return;
     }
 
-    void sendLeadToCrm({
-      contato_id: contato.id,
+    await sendLeadToCrm({
       nome,
       email,
       telefone: "",

@@ -160,6 +160,36 @@ const updateContatoCrmStatus = async (
   }
 };
 
+const resolveContatoId = async (lead: LeadPayload): Promise<string | null> => {
+  if (lead.contato_id) return lead.contato_id;
+
+  const admin = getAdminClient();
+  if (!admin || !lead.email) return null;
+
+  let query = admin
+    .from("st_contatos")
+    .select("id")
+    .eq("email", lead.email)
+    .order("created_at", { ascending: false })
+    .limit(1);
+
+  if (lead.nome) {
+    query = query.eq("nome", lead.nome);
+  }
+
+  if (lead.origem) {
+    query = query.eq("origem", lead.origem);
+  }
+
+  const { data, error } = await query.maybeSingle();
+  if (error) {
+    console.error("Erro ao localizar contato para atualizar crm_status:", error);
+    return null;
+  }
+
+  return data?.id ?? null;
+};
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -172,19 +202,22 @@ Deno.serve(async (req) => {
     });
   }
 
+  let lead: LeadPayload | null = null;
+
   try {
-    const lead = (await req.json()) as LeadPayload;
+    lead = (await req.json()) as LeadPayload;
     if (!lead?.nome || !lead?.email) {
       throw new Error("Payload inválido: nome e email são obrigatórios");
     }
 
+    const contatoId = await resolveContatoId(lead);
     const { endpoint } = buildEndpoint();
     const leadFields = buildLeadFields(lead);
     const result = await sendLeadToVista(endpoint, leadFields);
 
     if (!result.ok) {
-      if (lead.contato_id) {
-        await updateContatoCrmStatus(lead.contato_id, "error", result.rawBody);
+      if (contatoId) {
+        await updateContatoCrmStatus(contatoId, "error", result.rawBody);
       }
 
       return new Response(
@@ -202,8 +235,8 @@ Deno.serve(async (req) => {
       );
     }
 
-    if (lead.contato_id) {
-      await updateContatoCrmStatus(lead.contato_id, "success");
+    if (contatoId) {
+      await updateContatoCrmStatus(contatoId, "success");
     }
 
     return new Response(
@@ -211,11 +244,20 @@ Deno.serve(async (req) => {
         success: true,
         strategy: result.strategy,
         crm_response: result.rawBody,
+        contato_id: contatoId,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   } catch (error) {
     const message = error instanceof Error ? error.message : "Erro desconhecido";
+
+    if (lead) {
+      const contatoId = await resolveContatoId(lead);
+      if (contatoId) {
+        await updateContatoCrmStatus(contatoId, "error", message);
+      }
+    }
+
     return new Response(JSON.stringify({ success: false, error: message }), {
       status: 400,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
