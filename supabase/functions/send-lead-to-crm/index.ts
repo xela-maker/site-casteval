@@ -55,6 +55,17 @@ const appendUtmToMessage = (lead: LeadPayload, mensagemParts: string[]) => {
   );
 };
 
+const formatFoneForVista = (phone?: string | null) => {
+  const digits = (phone || "").replace(/\D/g, "");
+  if (digits.length < 10) return "";
+
+  if (digits.length === 10) {
+    return `${digits.slice(0, 2)} ${digits.slice(2, 6)}-${digits.slice(6)}`;
+  }
+
+  return `${digits.slice(0, 2)} ${digits.slice(2, 7)}-${digits.slice(7, 11)}`;
+};
+
 const buildLeadFields = (lead: LeadPayload) => {
   const mensagemParts = [lead.mensagem || ""];
   if (lead.url_origem) {
@@ -63,20 +74,27 @@ const buildLeadFields = (lead: LeadPayload) => {
   appendUtmToMessage(lead, mensagemParts);
 
   const origem = lead.origem || "site-casteval";
+  const fone = formatFoneForVista(lead.telefone);
 
-  return {
+  const leadFields: Record<string, string> = {
     nome: lead.nome,
     email: lead.email,
-    fone: lead.telefone || "",
     mensagem: mensagemParts.filter(Boolean).join("\n"),
     veiculo: ORIGEM_VEICULO[origem] || "Site Casteval",
     interesse: lead.interesse || "",
-    utm_source: lead.utm_source || "",
-    utm_medium: lead.utm_medium || "",
-    utm_campaign: lead.utm_campaign || "",
-    utm_term: lead.utm_term || "",
-    utm_content: lead.utm_content || "",
   };
+
+  if (fone) {
+    leadFields.fone = fone;
+  }
+
+  if (lead.utm_source) leadFields.utm_source = lead.utm_source;
+  if (lead.utm_medium) leadFields.utm_medium = lead.utm_medium;
+  if (lead.utm_campaign) leadFields.utm_campaign = lead.utm_campaign;
+  if (lead.utm_term) leadFields.utm_term = lead.utm_term;
+  if (lead.utm_content) leadFields.utm_content = lead.utm_content;
+
+  return leadFields;
 };
 
 const sendLeadToVista = async (endpoint: string, leadFields: ReturnType<typeof buildLeadFields>) => {

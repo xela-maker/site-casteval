@@ -4,6 +4,7 @@ import { useConfig } from './useConfig';
 import { supabase } from '@/integrations/supabase/client';
 import { sendLeadToCrm } from '@/lib/sendLeadToCrm';
 import { getStoredUtmParams, utmParamsToRecord } from '@/lib/utmTracking';
+import { getPhoneDigits } from '@/lib/phoneUtils';
 
 export const contactFormSchema = z.object({
   firstName: z.string()
@@ -84,7 +85,7 @@ export const useFormValidation = () => {
       }
 
       const fullName = `${data.firstName} ${data.lastName}`.trim();
-      const phoneDigits = data.phone.replace(/\D/g, '');
+      const phoneDigits = getPhoneDigits(data.phone);
 
       const utmFields = utmParamsToRecord(getStoredUtmParams());
 

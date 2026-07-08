@@ -18,6 +18,7 @@ import {
 } from "@/lib/whatsappLeadGate";
 import { sendLeadToCrm } from "@/lib/sendLeadToCrm";
 import { getStoredUtmParams, utmParamsToRecord } from "@/lib/utmTracking";
+import { formatPhoneMask, getPhoneDigits } from "@/lib/phoneUtils";
 
 interface LeadFormData {
   name: string;
@@ -31,18 +32,6 @@ const emptyForm: LeadFormData = {
   name: "",
   email: "",
   phone: "",
-};
-
-const formatPhoneMask = (value: string) => {
-  const digits = value.replace(/\D/g, "").slice(0, 11);
-
-  if (digits.length <= 2) return digits;
-  if (digits.length <= 6) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
-  if (digits.length <= 10) {
-    return `(${digits.slice(0, 2)}) ${digits.slice(2, 6)}-${digits.slice(6)}`;
-  }
-
-  return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
 };
 
 export const WhatsAppLeadCaptureModal = () => {
@@ -82,7 +71,7 @@ export const WhatsAppLeadCaptureModal = () => {
   }, []);
 
   const phoneDigits = useMemo(
-    () => formData.phone.replace(/\D/g, ""),
+    () => getPhoneDigits(formData.phone),
     [formData.phone],
   );
 

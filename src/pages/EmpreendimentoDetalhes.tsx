@@ -14,6 +14,7 @@ import { useSwipeGesture } from "@/hooks/useSwipeGesture";
 import { supabase } from "@/integrations/supabase/client";
 import { sendLeadToCrm } from "@/lib/sendLeadToCrm";
 import { getStoredUtmParams, utmParamsToRecord } from "@/lib/utmTracking";
+import { formatPhoneMask, getPhoneDigits, isValidPhone } from "@/lib/phoneUtils";
 import Swal from "sweetalert2";
 import casaVolpiHero from "@/assets/casa-volpi-hero.jpg";
 import familiaCta from "@/assets/familia-cta.jpg";
@@ -562,6 +563,7 @@ export default function EmpreendimentoDetalhes() {
   const [interestFormData, setInterestFormData] = useState({
     nome: "",
     email: "",
+    telefone: "",
     mensagem: "",
     consentimento: false,
   });
@@ -575,13 +577,31 @@ export default function EmpreendimentoDetalhes() {
   const handleInterestSubmit = async () => {
     const nome = interestFormData.nome.trim();
     const email = interestFormData.email.trim();
+    const telefone = getPhoneDigits(interestFormData.telefone);
     const mensagem = interestFormData.mensagem.trim();
 
-    if (!nome || !email || !mensagem) {
+    if (!nome || !email || !telefone || !mensagem) {
       await Swal.fire({
         icon: "warning",
         title: "Preencha os campos",
-        text: "Informe nome, e-mail e mensagem para continuar.",
+        text: "Informe nome, e-mail, telefone e mensagem para continuar.",
+        confirmButtonText: "Ok",
+        background: "#0F0F0F",
+        color: "#FFFFFF",
+        iconColor: "#F5B321",
+        confirmButtonColor: "#F5B321",
+        customClass: {
+          popup: "rounded-none",
+        },
+      });
+      return;
+    }
+
+    if (!isValidPhone(interestFormData.telefone)) {
+      await Swal.fire({
+        icon: "warning",
+        title: "Telefone invalido",
+        text: "Informe um telefone valido com DDD.",
         confirmButtonText: "Ok",
         background: "#0F0F0F",
         color: "#FFFFFF",
@@ -619,6 +639,7 @@ export default function EmpreendimentoDetalhes() {
     const { error } = await supabase.from("st_contatos").insert({
       nome,
       email,
+      telefone,
       mensagem,
       interesse: empreendimentoNome,
       empreendimento_id: empreendimentoId,
@@ -650,7 +671,7 @@ export default function EmpreendimentoDetalhes() {
     await sendLeadToCrm({
       nome,
       email,
-      telefone: "",
+      telefone,
       mensagem,
       interesse: empreendimentoNome,
       origem: "empreendimento_interesse_form",
@@ -658,7 +679,7 @@ export default function EmpreendimentoDetalhes() {
       ...utmFields,
     });
 
-    const waMessage = `${messages.property(empreendimentoNome)}\n\nNome: ${nome}\nE-mail: ${email}\nMensagem: ${mensagem}`;
+    const waMessage = `${messages.property(empreendimentoNome)}\n\nNome: ${nome}\nE-mail: ${email}\nTelefone: ${formatPhoneMask(interestFormData.telefone)}\nMensagem: ${mensagem}`;
     window.open(`https://wa.me/${phoneNumber}?text=${encodeURIComponent(waMessage)}`, "_blank");
 
     await Swal.fire({
@@ -678,6 +699,7 @@ export default function EmpreendimentoDetalhes() {
     setInterestFormData({
       nome: "",
       email: "",
+      telefone: "",
       mensagem: "",
       consentimento: false,
     });
@@ -1624,6 +1646,27 @@ export default function EmpreendimentoDetalhes() {
                   setInterestFormData((prev) => ({
                     ...prev,
                     email: e.target.value,
+                  }))
+                }
+                style={{
+                  padding: "10px 12px",
+                  borderRadius: 0,
+                  border: "none",
+                  borderBottom: "1px solid #F5B321",
+                  backgroundColor: "transparent",
+                  color: "#FFF",
+                  fontSize: 14,
+                  outline: "none",
+                }}
+              />
+              <input
+                type="tel"
+                placeholder="Telefone"
+                value={interestFormData.telefone}
+                onChange={(e) =>
+                  setInterestFormData((prev) => ({
+                    ...prev,
+                    telefone: formatPhoneMask(e.target.value),
                   }))
                 }
                 style={{
