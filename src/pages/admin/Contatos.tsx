@@ -628,36 +628,53 @@ export default function Contatos() {
 
       {/* Modal de Detalhes */}
       <Dialog open={!!selectedContato} onOpenChange={() => setSelectedContato(null)}>
-        <DialogContent style={{
-          maxWidth: '640px',
-          background: surface,
-          border: `1px solid ${border}`,
-          borderRadius: '20px',
-          padding: '32px',
-        }}>
-          <DialogHeader>
+        <DialogContent
+          className="!flex max-h-[min(90dvh,820px)] w-[calc(100%-1.5rem)] max-w-[640px] !flex-col gap-0 overflow-hidden p-0 sm:rounded-2xl"
+          style={{
+            background: surface,
+            border: `1px solid ${border}`,
+          }}
+        >
+          <div
+            style={{
+              height: '3px',
+              flexShrink: 0,
+              background: `linear-gradient(90deg, ${brand}, ${brandLight}, ${brand})`,
+            }}
+          />
+
+          <DialogHeader
+            className="shrink-0 space-y-1 border-b px-6 py-5 pr-12 text-left"
+            style={{ borderColor: border, background: surface2 }}
+          >
             <DialogTitle style={{
-              fontSize: '24px',
+              fontSize: '20px',
               fontWeight: 700,
               color: text,
-              marginBottom: '8px',
+              marginBottom: 0,
             }}>
-              Detalhes do Contato
+              {selectedContato?.nome || 'Detalhes do Contato'}
             </DialogTitle>
             <DialogDescription style={{
-              fontSize: '14px',
+              fontSize: '13px',
               color: textMuted,
             }}>
-              Informações completas do contato recebido
+              {selectedContato
+                ? format(new Date(selectedContato.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })
+                : 'Informações completas do contato recebido'}
             </DialogDescription>
           </DialogHeader>
 
           {selectedContato && (
-            <div style={{ marginTop: '24px' }}>
+            <>
+              <div
+                className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-6 py-5"
+                style={{ WebkitOverflowScrolling: 'touch' }}
+              >
               {/* Nome e Status */}
               <div style={{
                 display: 'grid',
-                gridTemplateColumns: '1fr 1fr',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
                 gap: '20px',
                 marginBottom: '24px',
                 paddingBottom: '24px',
@@ -1049,17 +1066,23 @@ export default function Contatos() {
                 </div>
               )}
 
-              {/* Botões de Ação */}
+              </div>
+
+              {/* Botões de Ação — fixos no rodapé */}
               <div style={{
                 display: 'flex',
+                flexShrink: 0,
                 gap: '12px',
-                paddingTop: '24px',
+                padding: '16px 24px',
+                paddingBottom: 'max(16px, env(safe-area-inset-bottom))',
                 borderTop: `1px solid ${border}`,
+                background: surface,
+                flexWrap: 'wrap',
               }}>
                 <button
                   onClick={() => window.open(`mailto:${selectedContato.email}`, '_blank')}
                   style={{
-                    flex: 1,
+                    flex: '1 1 200px',
                     display: 'inline-flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -1092,7 +1115,7 @@ export default function Contatos() {
                   <button
                     onClick={() => window.open(`https://wa.me/55${selectedContato.telefone.replace(/\D/g, '')}`, '_blank')}
                     style={{
-                      flex: 1,
+                      flex: '1 1 200px',
                       display: 'inline-flex',
                       alignItems: 'center',
                       justifyContent: 'center',
@@ -1121,7 +1144,7 @@ export default function Contatos() {
                   </button>
                 )}
               </div>
-            </div>
+            </>
           )}
         </DialogContent>
       </Dialog>

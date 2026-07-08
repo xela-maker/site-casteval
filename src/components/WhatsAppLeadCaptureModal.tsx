@@ -3,7 +3,6 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -35,6 +34,13 @@ const emptyForm: LeadFormData = {
   email: "",
   phone: "",
 };
+
+const fieldClassName = cn(
+  "h-12 rounded-lg border-line-100 bg-surface-0 text-ink-800 shadow-none",
+  "placeholder:text-ink-500/55",
+  "transition-smooth",
+  "focus-visible:border-brand-gold focus-visible:ring-2 focus-visible:ring-brand-gold/20",
+);
 
 export const WhatsAppLeadCaptureModal = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -82,15 +88,15 @@ export const WhatsAppLeadCaptureModal = () => {
     const newErrors: Partial<Record<keyof LeadFormData, string>> = {};
 
     if (formData.name.trim().length < 2) {
-      newErrors.name = "Informe um nome valido.";
+      newErrors.name = "Informe um nome válido.";
     }
 
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email.trim())) {
-      newErrors.email = "Informe um e-mail valido.";
+      newErrors.email = "Informe um e-mail válido.";
     }
 
     if (phoneDigits.length < 10) {
-      newErrors.phone = "Informe um telefone valido com DDD.";
+      newErrors.phone = "Informe um telefone válido com DDD.";
     }
 
     setErrors(newErrors);
@@ -163,50 +169,67 @@ export const WhatsAppLeadCaptureModal = () => {
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogContent
         className={cn(
-          "flex max-h-[min(90dvh,680px)] w-[calc(100%-1.5rem)] max-w-md flex-col gap-0 overflow-hidden p-0",
-          "border-neutral-200/80 shadow-[0_24px_80px_-12px_rgba(0,0,0,0.35)] sm:rounded-2xl",
+          "!flex max-h-[min(90dvh,700px)] w-[calc(100%-1.5rem)] max-w-[440px] !flex-col gap-0 overflow-hidden p-0",
+          "border-line-100 bg-surface-0 shadow-card-hover sm:rounded-card",
+          "[&>button]:right-5 [&>button]:top-5 [&>button]:rounded-full [&>button]:p-1.5",
+          "[&>button]:text-white/70 [&>button]:hover:bg-white/10 [&>button]:hover:text-white",
+          "[&>button]:focus:ring-brand-gold/40",
         )}
       >
-        <div className="h-1 shrink-0 bg-gradient-to-r from-[#F5B321] via-[#FFCC4D] to-[#F5B321]" />
-
-        <DialogHeader className="shrink-0 space-y-2 border-b border-neutral-100 bg-neutral-50/80 px-5 pb-4 pt-5 text-left sm:px-6">
-          <div className="flex items-start gap-3 pr-6">
-            <span className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#25D366]/12 text-[#1DA851]">
-              <MessageCircle className="h-5 w-5" aria-hidden />
-            </span>
-            <div className="min-w-0 space-y-1.5">
-              <DialogTitle className="text-lg font-semibold leading-snug text-neutral-900">
-                Antes de continuar para o WhatsApp
-              </DialogTitle>
-              <DialogDescription className="text-sm leading-relaxed text-neutral-600">
-                Preencha seus dados para que nosso time consiga te atender melhor.
-              </DialogDescription>
-            </div>
-          </div>
-        </DialogHeader>
-
-        <form
-          className="flex min-h-0 flex-1 flex-col"
-          onSubmit={handleSubmit}
-        >
+        <div className="relative shrink-0 overflow-hidden bg-brand-charcoal px-6 pb-6 pt-7 sm:px-7">
           <div
-            className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-4 sm:px-6"
+            aria-hidden
+            className="pointer-events-none absolute -right-10 -top-10 h-36 w-36 rounded-full bg-brand-gold/25 blur-3xl"
+          />
+          <div
+            aria-hidden
+            className="pointer-events-none absolute bottom-0 left-0 h-px w-full bg-gradient-to-r from-transparent via-brand-gold/50 to-transparent"
+          />
+
+          <DialogHeader className="relative space-y-3 text-left">
+            <p className="text-caption font-semibold uppercase tracking-overline text-brand-gold">
+              Atendimento exclusivo
+            </p>
+
+            <div className="flex items-start gap-4 pr-8">
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-brand-gold/35 bg-brand-gold/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">
+                <MessageCircle className="h-5 w-5 text-brand-gold" aria-hidden />
+              </span>
+
+              <div className="min-w-0 space-y-2">
+                <DialogTitle className="font-heading text-h5 font-bold leading-snug text-white">
+                  Antes de continuar para o WhatsApp
+                </DialogTitle>
+                <DialogDescription className="text-body-s leading-relaxed text-white/65">
+                  Preencha seus dados para que nosso time consiga te atender com agilidade.
+                </DialogDescription>
+              </div>
+            </div>
+          </DialogHeader>
+        </div>
+
+        <form className="flex min-h-0 flex-1 flex-col" onSubmit={handleSubmit}>
+          <div
+            className="min-h-0 flex-1 overflow-y-auto overscroll-contain bg-gradient-to-b from-surface-0 to-surface-50 px-6 py-5 sm:px-7"
             style={{ WebkitOverflowScrolling: "touch" }}
           >
             {request?.message ? (
-              <div className="mb-4 rounded-xl border border-neutral-200/80 bg-neutral-50 px-3.5 py-3">
-                <p className="mb-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-neutral-500">
+              <div className="mb-5 rounded-r-lg border-l-[3px] border-brand-gold bg-white/80 py-3.5 pl-4 pr-3 shadow-card-rest backdrop-blur-sm">
+                <p className="mb-1.5 text-caption font-semibold uppercase tracking-overline text-ink-500">
                   Sua mensagem
                 </p>
-                <p className="line-clamp-4 text-sm leading-relaxed text-neutral-700">
+                <p className="line-clamp-4 text-body-s leading-relaxed text-ink-700">
                   {request.message}
                 </p>
               </div>
             ) : null}
 
             <div className="space-y-4">
-              <div className="space-y-1.5">
-                <Label htmlFor="whatsapp-lead-name" className="text-neutral-800">
+              <div className="space-y-2">
+                <Label
+                  htmlFor="whatsapp-lead-name"
+                  className="text-caption font-semibold uppercase tracking-overline text-ink-500"
+                >
                   Nome
                 </Label>
                 <Input
@@ -217,15 +240,18 @@ export const WhatsAppLeadCaptureModal = () => {
                   }
                   placeholder="Seu nome completo"
                   autoComplete="name"
-                  className="h-11 border-neutral-200 bg-white"
+                  className={fieldClassName}
                 />
                 {errors.name ? (
-                  <p className="text-xs text-destructive">{errors.name}</p>
+                  <p className="text-caption text-destructive">{errors.name}</p>
                 ) : null}
               </div>
 
-              <div className="space-y-1.5">
-                <Label htmlFor="whatsapp-lead-email" className="text-neutral-800">
+              <div className="space-y-2">
+                <Label
+                  htmlFor="whatsapp-lead-email"
+                  className="text-caption font-semibold uppercase tracking-overline text-ink-500"
+                >
                   E-mail
                 </Label>
                 <Input
@@ -238,15 +264,18 @@ export const WhatsAppLeadCaptureModal = () => {
                   placeholder="voce@exemplo.com"
                   autoComplete="email"
                   inputMode="email"
-                  className="h-11 border-neutral-200 bg-white"
+                  className={fieldClassName}
                 />
                 {errors.email ? (
-                  <p className="text-xs text-destructive">{errors.email}</p>
+                  <p className="text-caption text-destructive">{errors.email}</p>
                 ) : null}
               </div>
 
-              <div className="space-y-1.5">
-                <Label htmlFor="whatsapp-lead-phone" className="text-neutral-800">
+              <div className="space-y-2">
+                <Label
+                  htmlFor="whatsapp-lead-phone"
+                  className="text-caption font-semibold uppercase tracking-overline text-ink-500"
+                >
                   Telefone
                 </Label>
                 <Input
@@ -262,44 +291,50 @@ export const WhatsAppLeadCaptureModal = () => {
                   placeholder="(00) 00000-0000"
                   autoComplete="tel"
                   inputMode="tel"
-                  className="h-11 border-neutral-200 bg-white"
+                  className={fieldClassName}
                 />
                 {errors.phone ? (
-                  <p className="text-xs text-destructive">{errors.phone}</p>
+                  <p className="text-caption text-destructive">{errors.phone}</p>
                 ) : null}
               </div>
             </div>
 
-            <p className="mt-4 flex items-start gap-2 text-xs leading-relaxed text-neutral-500">
-              <ShieldCheck className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#F5B321]" aria-hidden />
-              Seus dados sao usados apenas para contato sobre o imovel de interesse.
+            <p className="mt-5 flex items-start gap-2.5 text-caption leading-relaxed text-ink-500">
+              <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-brand-gold" aria-hidden />
+              Seus dados são usados apenas para contato sobre o imóvel de interesse.
             </p>
           </div>
 
-          <DialogFooter
+          <div
             className={cn(
-              "shrink-0 border-t border-neutral-100 bg-white px-5 py-4 sm:px-6",
-              "pb-[max(1rem,env(safe-area-inset-bottom))]",
+              "shrink-0 border-t border-line-100 bg-surface-50/90 px-6 py-5 backdrop-blur-sm sm:px-7",
+              "pb-[max(1.25rem,env(safe-area-inset-bottom))]",
             )}
           >
             <Button
               type="submit"
               disabled={isSubmitting}
-              className="h-12 w-full rounded-full bg-[#25D366] text-sm font-semibold tracking-wide text-white shadow-[0_8px_24px_-8px_rgba(37,211,102,0.65)] transition hover:bg-[#1fb85a] hover:shadow-[0_12px_28px_-8px_rgba(37,211,102,0.75)]"
+              className={cn(
+                "h-12 w-full rounded-pill text-body-s font-bold tracking-button text-white",
+                "bg-[#1A9F4B] shadow-[0_8px_24px_-8px_rgba(26,159,75,0.55)]",
+                "ring-1 ring-brand-gold/25 transition-smooth",
+                "hover:bg-[#158f43] hover:shadow-[0_12px_28px_-8px_rgba(26,159,75,0.6)] hover:ring-brand-gold/45",
+                "disabled:opacity-70",
+              )}
             >
               {isSubmitting ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <Loader2 className="h-4 w-4 animate-spin" />
                   Enviando...
                 </>
               ) : (
                 <>
-                  <MessageCircle className="mr-2 h-4 w-4" />
+                  <MessageCircle className="h-4 w-4" />
                   Ir para o WhatsApp
                 </>
               )}
             </Button>
-          </DialogFooter>
+          </div>
         </form>
       </DialogContent>
     </Dialog>
