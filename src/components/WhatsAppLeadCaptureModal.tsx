@@ -8,7 +8,6 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { trackFormSubmit } from "@/utils/analytics";
 import {
@@ -18,7 +17,8 @@ import {
 import { sendLeadToCrm } from "@/lib/sendLeadToCrm";
 import { getLeadTrackingFields, getLeadTrackingFieldsForDb } from "@/lib/utmTracking";
 import { formatPhoneMask, getPhoneDigits } from "@/lib/phoneUtils";
-import { Loader2, MessageCircle, ShieldCheck } from "lucide-react";
+import { Loader2 } from "lucide-react";
+import { FaWhatsapp } from "react-icons/fa";
 import { cn } from "@/lib/utils";
 
 interface LeadFormData {
@@ -34,13 +34,6 @@ const emptyForm: LeadFormData = {
   email: "",
   phone: "",
 };
-
-const fieldClassName = cn(
-  "h-12 rounded-lg border-line-100 bg-surface-0 text-ink-800 shadow-none",
-  "placeholder:text-ink-500/55",
-  "transition-smooth",
-  "focus-visible:border-brand-gold focus-visible:ring-2 focus-visible:ring-brand-gold/20",
-);
 
 export const WhatsAppLeadCaptureModal = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -169,68 +162,59 @@ export const WhatsAppLeadCaptureModal = () => {
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogContent
         className={cn(
-          "!flex max-h-[min(90dvh,700px)] w-[calc(100%-1.5rem)] max-w-[440px] !flex-col gap-0 overflow-hidden p-0",
-          "border-line-100 bg-surface-0 shadow-card-hover sm:rounded-card",
-          "[&>button]:right-5 [&>button]:top-5 [&>button]:rounded-full [&>button]:p-1.5",
-          "[&>button]:text-white/70 [&>button]:hover:bg-white/10 [&>button]:hover:text-white",
-          "[&>button]:focus:ring-brand-gold/40",
+          "!flex max-h-[min(90dvh,640px)] w-[calc(100%-2rem)] max-w-[480px] !flex-col gap-0 overflow-hidden border-0 p-0",
+          "rounded-xl bg-white shadow-[0_12px_30px_rgba(0,0,0,0.08)]",
+          "[&>button]:right-4 [&>button]:top-4 [&>button]:text-ink-500 [&>button]:opacity-70",
+          "[&>button]:hover:bg-surface-50 [&>button]:hover:text-ink-900 [&>button]:hover:opacity-100",
         )}
       >
-        <div className="relative shrink-0 overflow-hidden bg-brand-charcoal px-6 pb-6 pt-7 sm:px-7">
-          <div
-            aria-hidden
-            className="pointer-events-none absolute -right-10 -top-10 h-36 w-36 rounded-full bg-brand-gold/25 blur-3xl"
-          />
-          <div
-            aria-hidden
-            className="pointer-events-none absolute bottom-0 left-0 h-px w-full bg-gradient-to-r from-transparent via-brand-gold/50 to-transparent"
-          />
-
-          <DialogHeader className="relative space-y-3 text-left">
-            <p className="text-caption font-semibold uppercase tracking-overline text-brand-gold">
-              Atendimento exclusivo
-            </p>
-
-            <div className="flex items-start gap-4 pr-8">
-              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-brand-gold/35 bg-brand-gold/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">
-                <MessageCircle className="h-5 w-5 text-brand-gold" aria-hidden />
-              </span>
-
-              <div className="min-w-0 space-y-2">
-                <DialogTitle className="font-heading text-h5 font-bold leading-snug text-white">
-                  Antes de continuar para o WhatsApp
-                </DialogTitle>
-                <DialogDescription className="text-body-s leading-relaxed text-white/65">
-                  Preencha seus dados para que nosso time consiga te atender com agilidade.
-                </DialogDescription>
-              </div>
-            </div>
-          </DialogHeader>
-        </div>
-
         <form className="flex min-h-0 flex-1 flex-col" onSubmit={handleSubmit}>
           <div
-            className="min-h-0 flex-1 overflow-y-auto overscroll-contain bg-gradient-to-b from-surface-0 to-surface-50 px-6 py-5 sm:px-7"
+            className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-6 pb-4 pt-6 sm:px-7 sm:pt-7"
             style={{ WebkitOverflowScrolling: "touch" }}
           >
+            <DialogHeader className="space-y-0 text-left">
+              <div className="mb-5 flex items-start gap-3.5 pr-8">
+                <div
+                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full"
+                  style={{ background: "#FFF5CC" }}
+                >
+                  <FaWhatsapp className="h-5 w-5" style={{ color: "#C5A139" }} aria-hidden />
+                </div>
+
+                <div className="min-w-0 pt-0.5">
+                  <DialogTitle
+                    className="font-heading text-[22px] font-semibold leading-tight text-ink-900"
+                    style={{ margin: 0 }}
+                  >
+                    Falar no WhatsApp
+                  </DialogTitle>
+                  <DialogDescription
+                    className="mt-1.5 text-[14px] leading-relaxed text-ink-500"
+                    style={{ margin: 0 }}
+                  >
+                    Preencha seus dados para iniciar a conversa com nosso time.
+                  </DialogDescription>
+                </div>
+              </div>
+            </DialogHeader>
+
             {request?.message ? (
-              <div className="mb-5 rounded-r-lg border-l-[3px] border-brand-gold bg-white/80 py-3.5 pl-4 pr-3 shadow-card-rest backdrop-blur-sm">
-                <p className="mb-1.5 text-caption font-semibold uppercase tracking-overline text-ink-500">
-                  Sua mensagem
-                </p>
-                <p className="line-clamp-4 text-body-s leading-relaxed text-ink-700">
+              <div
+                className="mb-5 rounded-lg px-3.5 py-3"
+                style={{ background: "#F8F8F8" }}
+              >
+                <p className="mb-1 text-[12px] font-semibold text-ink-500">Sua mensagem</p>
+                <p className="line-clamp-3 text-[14px] leading-relaxed text-ink-700">
                   {request.message}
                 </p>
               </div>
             ) : null}
 
             <div className="space-y-4">
-              <div className="space-y-2">
-                <Label
-                  htmlFor="whatsapp-lead-name"
-                  className="text-caption font-semibold uppercase tracking-overline text-ink-500"
-                >
-                  Nome
+              <div>
+                <Label className="mb-2 block text-body-s font-medium text-ink-700">
+                  Nome *
                 </Label>
                 <Input
                   id="whatsapp-lead-name"
@@ -238,21 +222,18 @@ export const WhatsAppLeadCaptureModal = () => {
                   onChange={(event) =>
                     setFormData((current) => ({ ...current, name: event.target.value }))
                   }
-                  placeholder="Seu nome completo"
+                  placeholder="Seu nome"
                   autoComplete="name"
-                  className={fieldClassName}
+                  className={cn("h-11 bg-white", errors.name && "border-destructive")}
                 />
                 {errors.name ? (
-                  <p className="text-caption text-destructive">{errors.name}</p>
+                  <p className="mt-1 text-caption text-destructive">{errors.name}</p>
                 ) : null}
               </div>
 
-              <div className="space-y-2">
-                <Label
-                  htmlFor="whatsapp-lead-email"
-                  className="text-caption font-semibold uppercase tracking-overline text-ink-500"
-                >
-                  E-mail
+              <div>
+                <Label className="mb-2 block text-body-s font-medium text-ink-700">
+                  E-mail *
                 </Label>
                 <Input
                   id="whatsapp-lead-email"
@@ -261,22 +242,19 @@ export const WhatsAppLeadCaptureModal = () => {
                   onChange={(event) =>
                     setFormData((current) => ({ ...current, email: event.target.value }))
                   }
-                  placeholder="voce@exemplo.com"
+                  placeholder="seu@email.com"
                   autoComplete="email"
                   inputMode="email"
-                  className={fieldClassName}
+                  className={cn("h-11 bg-white", errors.email && "border-destructive")}
                 />
                 {errors.email ? (
-                  <p className="text-caption text-destructive">{errors.email}</p>
+                  <p className="mt-1 text-caption text-destructive">{errors.email}</p>
                 ) : null}
               </div>
 
-              <div className="space-y-2">
-                <Label
-                  htmlFor="whatsapp-lead-phone"
-                  className="text-caption font-semibold uppercase tracking-overline text-ink-500"
-                >
-                  Telefone
+              <div>
+                <Label className="mb-2 block text-body-s font-medium text-ink-700">
+                  Telefone *
                 </Label>
                 <Input
                   id="whatsapp-lead-phone"
@@ -288,39 +266,31 @@ export const WhatsAppLeadCaptureModal = () => {
                       phone: formatPhoneMask(event.target.value),
                     }))
                   }
-                  placeholder="(00) 00000-0000"
+                  placeholder="(41) 99999-9999"
                   autoComplete="tel"
                   inputMode="tel"
-                  className={fieldClassName}
+                  className={cn("h-11 bg-white", errors.phone && "border-destructive")}
                 />
                 {errors.phone ? (
-                  <p className="text-caption text-destructive">{errors.phone}</p>
+                  <p className="mt-1 text-caption text-destructive">{errors.phone}</p>
                 ) : null}
               </div>
             </div>
 
-            <p className="mt-5 flex items-start gap-2.5 text-caption leading-relaxed text-ink-500">
-              <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-brand-gold" aria-hidden />
+            <p className="mt-4 text-[12px] leading-relaxed text-ink-500">
               Seus dados são usados apenas para contato sobre o imóvel de interesse.
             </p>
           </div>
 
           <div
-            className={cn(
-              "shrink-0 border-t border-line-100 bg-surface-50/90 px-6 py-5 backdrop-blur-sm sm:px-7",
-              "pb-[max(1.25rem,env(safe-area-inset-bottom))]",
-            )}
+            className="shrink-0 px-6 pb-6 pt-2 sm:px-7"
+            style={{ paddingBottom: "max(1.5rem, env(safe-area-inset-bottom))" }}
           >
-            <Button
+            <button
               type="submit"
               disabled={isSubmitting}
-              className={cn(
-                "h-12 w-full rounded-pill text-body-s font-bold tracking-button text-white",
-                "bg-[#1A9F4B] shadow-[0_8px_24px_-8px_rgba(26,159,75,0.55)]",
-                "ring-1 ring-brand-gold/25 transition-smooth",
-                "hover:bg-[#158f43] hover:shadow-[0_12px_28px_-8px_rgba(26,159,75,0.6)] hover:ring-brand-gold/45",
-                "disabled:opacity-70",
-              )}
+              className="inline-flex h-12 w-full items-center justify-center gap-2.5 rounded-full text-[14px] font-bold text-white transition-opacity disabled:cursor-wait disabled:opacity-70"
+              style={{ backgroundColor: "#25D366" }}
             >
               {isSubmitting ? (
                 <>
@@ -329,11 +299,11 @@ export const WhatsAppLeadCaptureModal = () => {
                 </>
               ) : (
                 <>
-                  <MessageCircle className="h-4 w-4" />
-                  Ir para o WhatsApp
+                  <FaWhatsapp className="h-[18px] w-[18px]" />
+                  FALAR NO WHATSAPP
                 </>
               )}
-            </Button>
+            </button>
           </div>
         </form>
       </DialogContent>
