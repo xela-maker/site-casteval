@@ -50,6 +50,9 @@ const extractFromParams = (params: URLSearchParams): UtmParams => {
 const hasStandardUtm = (utm: UtmParams) =>
   UTM_PARAM_KEYS.some((key) => Boolean(utm[key]));
 
+const hasAnyTracking = (utm: UtmParams) =>
+  ALL_TRACKING_KEYS.some((key) => Boolean(utm[key]));
+
 /**
  * Alguns links do Google Ads chegam com as UTMs inteiras codificadas em um único
  * parâmetro, ex.: ?utm_source%3Dgoogle%26utm_medium%3Dcpc...
@@ -78,11 +81,16 @@ const parseNestedEncodedQuery = (search: string): UtmParams => {
   candidates.add(safeDecodeURIComponent(withoutVed));
 
   for (const candidate of candidates) {
-    if (!candidate.includes("utm_source=")) continue;
+    const looksLikeTracking =
+      candidate.includes("utm_source=") ||
+      candidate.includes("gclid=") ||
+      candidate.includes("utm_medium=");
+
+    if (!looksLikeTracking) continue;
 
     const query = candidate.startsWith("?") ? candidate : `?${candidate}`;
     const parsed = extractFromParams(new URLSearchParams(query));
-    if (hasStandardUtm(parsed)) {
+    if (hasAnyTracking(parsed)) {
       return parsed;
     }
   }
@@ -94,22 +102,32 @@ export const parseUtmFromSearch = (search: string): UtmParams => {
   if (!search) return {};
 
   const standard = extractFromParams(new URLSearchParams(search));
-  if (hasStandardUtm(standard)) {
+  if (hasAnyTracking(standard)) {
     return standard;
   }
 
   return parseNestedEncodedQuery(search);
 };
 
-export const hasUtmParams = (utm: UtmParams) => hasStandardUtm(utm);
+export const hasUtmParams = (utm: UtmParams) => hasAnyTracking(utm);
 
+/**
+ * Captura tags da URL e persiste no localStorage.
+ * - Salva UTMs padrão e extras (gclid, gad_*, etc.)
+ * - Faz merge: mantém tags já salvas e atualiza as que vierem na URL nova
+ * - Assim, ao navegar sem query string, as tags da entrada continuam disponíveis
+ *   para WhatsApp, empreendimento e formulário de contato.
+ */
 export const captureUtmFromSearch = (search: string) => {
   if (!isBrowser()) return;
 
   const incoming = parseUtmFromSearch(search);
-  if (!hasUtmParams(incoming)) return;
+  if (!hasAnyTracking(incoming)) return;
 
-  localStorage.setItem(UTM_STORAGE_KEY, JSON.stringify(incoming));
+  const existing = getStoredUtmParams();
+  const merged: UtmParams = { ...existing, ...incoming };
+
+  localStorage.setItem(UTM_STORAGE_KEY, JSON.stringify(merged));
 };
 
 export const getStoredUtmParams = (): UtmParams => {
@@ -134,7 +152,7 @@ export const getStoredUtmParams = (): UtmParams => {
 };
 
 export const formatUtmForMessage = (utm: UtmParams) => {
-  if (!hasUtmParams(utm) && !EXTRA_TRACKING_KEYS.some((key) => utm[key])) {
+  if (!hasAnyTracking(utm)) {
     return "";
   }
 
@@ -170,4 +188,5 @@ export const getLeadTrackingFields = () => {
   };
 };
 
+/** Colunas UTM da tabela st_contatos (só as 5 padrão). */
 export const getLeadTrackingFieldsForDb = () => utmParamsToRecord(getStoredUtmParams());
