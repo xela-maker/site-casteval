@@ -47,11 +47,13 @@ export const AdminSidebar = () => {
   const brand = "#f6c90e";
 
   const handleSignOut = async () => await signOut();
+  const sidebarWidth = collapsed ? "80px" : "260px";
 
   return (
     <aside
       style={{
-        width: collapsed ? "80px" : "260px",
+        width: sidebarWidth,
+        ["--admin-sidebar-width" as string]: sidebarWidth,
         transition: "width 0.3s ease",
         borderRight: `1px solid ${border}`,
         display: "flex",

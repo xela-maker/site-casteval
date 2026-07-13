@@ -1,10 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useBlogPost, useCreateBlogPost, useUpdateBlogPost } from "@/hooks/useBlogPosts";
 import { FormBase } from "@/components/admin/FormBase";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -12,7 +11,19 @@ import { ImageUploader } from "@/components/admin/ImageUploader";
 import { TiptapEditor } from "@/components/admin/TiptapEditor";
 import { SlugField } from "@/components/admin/SlugField";
 import { toast } from "sonner";
-import { FileText, Image, Settings, Search, Eye, Tag, User, Calendar, TrendingUp } from "lucide-react";
+import {
+  FileText,
+  Image,
+  Settings,
+  Search,
+  Eye,
+  Tag,
+  User,
+  TrendingUp,
+  Cloud,
+  CloudOff,
+  RotateCcw,
+} from "lucide-react";
 
 interface BlogPostData {
   id?: string;
@@ -53,6 +64,8 @@ const initialData: BlogPostData = {
   seo_keywords: [],
 };
 
+const DRAFT_PREFIX = "casteval:blog-form-draft:";
+
 const styles = {
   fieldGroup: {
     marginBottom: "28px",
@@ -65,11 +78,6 @@ const styles = {
     fontWeight: "600",
     marginBottom: "10px",
     color: "hsl(var(--admin-text))",
-  },
-  labelIcon: {
-    width: "18px",
-    height: "18px",
-    color: "hsl(var(--admin-muted))",
   },
   helperText: {
     fontSize: "13px",
@@ -162,46 +170,93 @@ const styles = {
     marginTop: "6px",
     textAlign: "right" as const,
   },
-  gridTwo: {
-    display: "grid",
-    gridTemplateColumns: "repeat(2, 1fr)",
-    gap: "20px",
-  },
 };
 
 const isValidUUID = (value?: string): boolean =>
   !!value && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
+
+const hasMeaningfulContent = (html: string) => {
+  const text = (html || "")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&nbsp;/g, " ")
+    .trim();
+  return text.length > 0;
+};
+
+type DraftPayload = {
+  formData: BlogPostData;
+  tagsInput: string;
+  keywordsInput: string;
+  savedAt: string;
+};
+
+function readDraft(key: string): DraftPayload | null {
+  try {
+    const raw = localStorage.getItem(key);
+    if (!raw) return null;
+    return JSON.parse(raw) as DraftPayload;
+  } catch {
+    return null;
+  }
+}
+
+function writeDraft(key: string, payload: DraftPayload) {
+  try {
+    localStorage.setItem(key, JSON.stringify(payload));
+  } catch {
+    // quota / private mode — ignore
+  }
+}
+
+function clearDraft(key: string) {
+  try {
+    localStorage.removeItem(key);
+  } catch {
+    // ignore
+  }
+}
+
+function formatDraftTime(iso: string) {
+  try {
+    return new Date(iso).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+  } catch {
+    return "";
+  }
+}
 
 export default function BlogForm() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
   const isEdit = isValidUUID(id);
+  const draftKey = `${DRAFT_PREFIX}${isEdit ? id : "new"}`;
 
   const [formData, setFormData] = useState<BlogPostData>(initialData);
   const [tagsInput, setTagsInput] = useState("");
   const [keywordsInput, setKeywordsInput] = useState("");
+  const [draftSavedAt, setDraftSavedAt] = useState<string | null>(null);
+  const [hydrated, setHydrated] = useState(false);
+  const [isDirty, setIsDirty] = useState(false);
+  const skipNextDraftSave = useRef(false);
+  const loadedPostId = useRef<string | null>(null);
+  const newPostHydrated = useRef(false);
 
   const { data: post, isLoading } = useBlogPost(isEdit ? id : undefined);
   const createMutation = useCreateBlogPost();
   const updateMutation = useUpdateBlogPost();
 
-  // Adicionar estilos globais para o editor
   useEffect(() => {
     const styleId = "tiptap-toolbar-styles";
     if (!document.getElementById(styleId)) {
       const style = document.createElement("style");
       style.id = styleId;
       style.textContent = `
-        /* Toolbar do TiptapEditor */
         .tiptap-toolbar {
           padding: 12px !important;
           gap: 8px !important;
           border-bottom: 2px solid hsl(var(--admin-line)) !important;
           background: hsl(var(--admin-surface-2)) !important;
         }
-        
-        /* Botões da toolbar */
         .tiptap-toolbar button {
           min-width: 40px !important;
           min-height: 40px !important;
@@ -212,34 +267,24 @@ export default function BlogForm() {
           align-items: center !important;
           justify-content: center !important;
         }
-        
-        /* Ícones dentro dos botões */
         .tiptap-toolbar button svg {
           width: 20px !important;
           height: 20px !important;
         }
-        
-        /* Hover nos botões */
         .tiptap-toolbar button:hover {
           background: hsl(var(--admin-accent)) !important;
           transform: scale(1.05) !important;
         }
-        
-        /* Botão ativo */
         .tiptap-toolbar button.is-active {
           background: hsl(var(--admin-accent)) !important;
           color: hsl(var(--admin-accent-foreground)) !important;
         }
-        
-        /* Separadores */
         .tiptap-toolbar .separator {
           width: 2px !important;
           height: 32px !important;
           background: hsl(var(--admin-line)) !important;
           margin: 0 8px !important;
         }
-        
-        /* Selects e inputs da toolbar */
         .tiptap-toolbar select,
         .tiptap-toolbar input {
           min-height: 40px !important;
@@ -247,15 +292,11 @@ export default function BlogForm() {
           font-size: 14px !important;
           border-radius: 8px !important;
         }
-        
-        /* Área de conteúdo do editor */
         .ProseMirror {
           padding: 20px !important;
           font-size: 15px !important;
           line-height: 1.7 !important;
         }
-        
-        /* Focus no editor */
         .ProseMirror:focus {
           outline: none !important;
           border: none !important;
@@ -265,30 +306,138 @@ export default function BlogForm() {
     }
 
     return () => {
-      const existingStyle = document.getElementById(styleId);
-      if (existingStyle) {
-        existingStyle.remove();
-      }
+      document.getElementById(styleId)?.remove();
     };
   }, []);
 
+  // Hydrate: edit from API, or new from local draft
   useEffect(() => {
-    if (post) {
-      setFormData({
+    if (isEdit) {
+      if (!post) return;
+      if (loadedPostId.current === post.id) return;
+      loadedPostId.current = post.id;
+
+      const draft = readDraft(draftKey);
+      const serverData: BlogPostData = {
         ...post,
         tags: Array.isArray(post.tags) ? post.tags : [],
         seo_keywords: Array.isArray(post.seo_keywords) ? post.seo_keywords : [],
+      };
+
+      if (draft?.formData && draft.savedAt) {
+        skipNextDraftSave.current = true;
+        setFormData(draft.formData);
+        setTagsInput(draft.tagsInput ?? "");
+        setKeywordsInput(draft.keywordsInput ?? "");
+        setDraftSavedAt(draft.savedAt);
+        setIsDirty(true);
+        toast.message("Rascunho local restaurado", {
+          description: "Você tinha alterações não publicadas neste post.",
+          action: {
+            label: "Usar versão do servidor",
+            onClick: () => {
+              skipNextDraftSave.current = true;
+              setFormData(serverData);
+              setTagsInput(serverData.tags.join(", "));
+              setKeywordsInput(serverData.seo_keywords.join(", "));
+              clearDraft(draftKey);
+              setDraftSavedAt(null);
+              setIsDirty(false);
+            },
+          },
+        });
+      } else {
+        skipNextDraftSave.current = true;
+        setFormData(serverData);
+        setTagsInput(serverData.tags.join(", "));
+        setKeywordsInput(serverData.seo_keywords.join(", "));
+        setIsDirty(false);
+      }
+      setHydrated(true);
+      return;
+    }
+
+    // New post — hydrate once
+    if (newPostHydrated.current) return;
+    newPostHydrated.current = true;
+
+    const draft = readDraft(draftKey);
+    if (draft?.formData) {
+      skipNextDraftSave.current = true;
+      setFormData({
+        ...draft.formData,
+        autor_nome:
+          draft.formData.autor_nome ||
+          user?.user_metadata?.full_name ||
+          user?.email ||
+          "",
       });
-      setTagsInput(Array.isArray(post.tags) ? post.tags.join(", ") : "");
-      setKeywordsInput(Array.isArray(post.seo_keywords) ? post.seo_keywords.join(", ") : "");
-    } else if (user) {
-      const profile = user.user_metadata;
+      setTagsInput(draft.tagsInput ?? "");
+      setKeywordsInput(draft.keywordsInput ?? "");
+      setDraftSavedAt(draft.savedAt);
+      setIsDirty(true);
+      toast.success("Rascunho local restaurado");
+    } else {
+      skipNextDraftSave.current = true;
       setFormData((prev) => ({
         ...prev,
-        autor_nome: profile?.full_name || user.email || "",
+        autor_nome: user?.user_metadata?.full_name || user?.email || prev.autor_nome || "",
       }));
     }
-  }, [post, user]);
+    setHydrated(true);
+  }, [post, user, isEdit, draftKey]);
+
+  // Fill author when auth resolves after first paint (new posts only)
+  useEffect(() => {
+    if (isEdit || !user) return;
+    const name = user.user_metadata?.full_name || user.email || "";
+    if (!name) return;
+    setFormData((prev) => (prev.autor_nome ? prev : { ...prev, autor_nome: name }));
+  }, [user, isEdit]);
+
+  // Autosave draft to localStorage
+  useEffect(() => {
+    if (!hydrated) return;
+    if (skipNextDraftSave.current) {
+      skipNextDraftSave.current = false;
+      return;
+    }
+
+    const hasContent =
+      formData.titulo.trim() ||
+      formData.slug.trim() ||
+      formData.resumo.trim() ||
+      hasMeaningfulContent(formData.conteudo) ||
+      formData.imagem_destaque ||
+      formData.seo_title.trim();
+
+    if (!hasContent) {
+      clearDraft(draftKey);
+      setDraftSavedAt(null);
+      setIsDirty(false);
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      const savedAt = new Date().toISOString();
+      writeDraft(draftKey, { formData, tagsInput, keywordsInput, savedAt });
+      setDraftSavedAt(savedAt);
+      setIsDirty(true);
+    }, 600);
+
+    return () => window.clearTimeout(timer);
+  }, [formData, tagsInput, keywordsInput, hydrated, draftKey]);
+
+  // Warn on browser leave with unsaved draft
+  useEffect(() => {
+    const onBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (!isDirty) return;
+      e.preventDefault();
+      e.returnValue = "";
+    };
+    window.addEventListener("beforeunload", onBeforeUnload);
+    return () => window.removeEventListener("beforeunload", onBeforeUnload);
+  }, [isDirty]);
 
   const extractImageUrl = (imageData: string | { url: string; alt?: string } | null | undefined): string => {
     if (!imageData) return "";
@@ -307,7 +456,7 @@ export default function BlogForm() {
       return;
     }
     if (status === "publicado") {
-      if (!formData.conteudo) {
+      if (!hasMeaningfulContent(formData.conteudo)) {
         toast.error("Conteúdo é obrigatório para publicar");
         return;
       }
@@ -337,15 +486,18 @@ export default function BlogForm() {
           autor_id: user?.id ?? null,
         });
       }
+      clearDraft(draftKey);
+      setIsDirty(false);
+      setDraftSavedAt(null);
       navigate("/admin/blog");
     } catch (error) {
       console.error("Erro ao salvar post:", error);
     }
   };
 
-  const updateField = (field: keyof BlogPostData, value: any) => {
+  const updateField = useCallback((field: keyof BlogPostData, value: unknown) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
-  };
+  }, []);
 
   const handleTagsChange = (value: string) => {
     setTagsInput(value);
@@ -365,7 +517,44 @@ export default function BlogForm() {
     updateField("seo_keywords", keywords);
   };
 
-  if (isLoading) {
+  const discardLocalDraft = () => {
+    clearDraft(draftKey);
+    setDraftSavedAt(null);
+    if (isEdit && post) {
+      skipNextDraftSave.current = true;
+      const serverData: BlogPostData = {
+        ...post,
+        tags: Array.isArray(post.tags) ? post.tags : [],
+        seo_keywords: Array.isArray(post.seo_keywords) ? post.seo_keywords : [],
+      };
+      setFormData(serverData);
+      setTagsInput(serverData.tags.join(", "));
+      setKeywordsInput(serverData.seo_keywords.join(", "));
+      setIsDirty(false);
+      toast.success("Rascunho local descartado");
+      return;
+    }
+    skipNextDraftSave.current = true;
+    const autor =
+      user?.user_metadata?.full_name || user?.email || "";
+    setFormData({ ...initialData, autor_nome: autor, data_publicacao: new Date().toISOString() });
+    setTagsInput("");
+    setKeywordsInput("");
+    setIsDirty(false);
+    toast.success("Formulário limpo");
+  };
+
+  const tabComplete = useMemo(
+    () => ({
+      conteudo: Boolean(formData.titulo.trim() && formData.slug.trim() && hasMeaningfulContent(formData.conteudo)),
+      midia: Boolean(formData.imagem_destaque),
+      configuracoes: Boolean(formData.categoria || formData.tags.length > 0),
+      seo: Boolean(formData.seo_title.trim() || formData.seo_description.trim()),
+    }),
+    [formData],
+  );
+
+  if (isLoading && isEdit) {
     return (
       <div
         style={{
@@ -375,14 +564,7 @@ export default function BlogForm() {
           minHeight: "400px",
         }}
       >
-        <div
-          style={{
-            color: "hsl(var(--admin-muted))",
-            fontSize: "16px",
-          }}
-        >
-          Carregando...
-        </div>
+        <div style={{ color: "hsl(var(--admin-muted))", fontSize: "16px" }}>Carregando...</div>
       </div>
     );
   }
@@ -391,9 +573,10 @@ export default function BlogForm() {
     {
       value: "conteudo",
       label: "Conteúdo",
+      complete: tabComplete.conteudo,
+      icon: <FileText className="h-4 w-4" />,
       content: (
         <div style={styles.section}>
-          {/* Informações Básicas */}
           <div style={styles.card}>
             <h3 style={styles.sectionTitle}>
               <FileText size={20} style={{ display: "inline", marginRight: "8px" }} />
@@ -474,7 +657,6 @@ export default function BlogForm() {
             </div>
           </div>
 
-          {/* Editor de Conteúdo */}
           <div style={styles.card}>
             <h3 style={styles.sectionTitle}>
               <FileText size={20} style={{ display: "inline", marginRight: "8px" }} />
@@ -495,6 +677,8 @@ export default function BlogForm() {
     {
       value: "midia",
       label: "Mídia",
+      complete: tabComplete.midia,
+      icon: <Image className="h-4 w-4" />,
       content: (
         <div style={styles.section}>
           <div style={styles.card}>
@@ -560,9 +744,10 @@ export default function BlogForm() {
     {
       value: "configuracoes",
       label: "Configurações",
+      complete: tabComplete.configuracoes,
+      icon: <Settings className="h-4 w-4" />,
       content: (
         <div style={styles.section}>
-          {/* Tags */}
           <div style={styles.card}>
             <h3 style={styles.sectionTitle}>
               <Tag size={20} style={{ display: "inline", marginRight: "8px" }} />
@@ -599,7 +784,6 @@ export default function BlogForm() {
             </div>
           </div>
 
-          {/* Configurações de Exibição */}
           <div style={styles.card}>
             <h3 style={styles.sectionTitle}>
               <Settings size={20} style={{ display: "inline", marginRight: "8px" }} />
@@ -643,6 +827,8 @@ export default function BlogForm() {
     {
       value: "seo",
       label: "SEO",
+      complete: tabComplete.seo,
+      icon: <Search className="h-4 w-4" />,
       content: (
         <div style={styles.section}>
           <div style={styles.card}>
@@ -712,7 +898,6 @@ export default function BlogForm() {
             </div>
           </div>
 
-          {/* Preview do Google */}
           <div style={styles.previewBox}>
             <div style={styles.previewTitle}>
               <Search size={18} />
@@ -757,6 +942,38 @@ export default function BlogForm() {
     },
   ];
 
+  const statusSlot = (
+    <div className="flex items-center gap-3">
+      {draftSavedAt ? (
+        <span className="inline-flex items-center gap-1.5">
+          <Cloud className="h-3.5 w-3.5" style={{ color: "hsl(var(--admin-success))" }} />
+          Salvo às {formatDraftTime(draftSavedAt)}
+        </span>
+      ) : (
+        <span className="inline-flex items-center gap-1.5">
+          <CloudOff className="h-3.5 w-3.5" />
+          Autosave ativo
+        </span>
+      )}
+      {isDirty && (
+        <button
+          type="button"
+          onClick={discardLocalDraft}
+          className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-[11px] font-semibold transition-opacity hover:opacity-80"
+          style={{
+            color: "hsl(var(--admin-muted))",
+            border: "1px solid hsl(var(--admin-line))",
+            background: "transparent",
+            cursor: "pointer",
+          }}
+        >
+          <RotateCcw className="h-3 w-3" />
+          Descartar
+        </button>
+      )}
+    </div>
+  );
+
   return (
     <div style={{ paddingBottom: "120px" }}>
       <div
@@ -780,13 +997,10 @@ export default function BlogForm() {
           <FileText size={32} />
           {isEdit ? "Editar Post" : "Novo Post"}
         </h1>
-        <p
-          style={{
-            fontSize: "15px",
-            color: "hsl(var(--admin-muted))",
-          }}
-        >
-          {isEdit ? `Editando: ${formData.titulo || "Post sem título"}` : "Crie um novo post para o blog da Casteval"}
+        <p style={{ fontSize: "15px", color: "hsl(var(--admin-muted))" }}>
+          {isEdit
+            ? `Editando: ${formData.titulo || "Post sem título"}`
+            : "Crie um novo post para o blog da Casteval. Seu progresso é salvo automaticamente neste navegador."}
         </p>
       </div>
 
@@ -797,6 +1011,7 @@ export default function BlogForm() {
         onPreview={isEdit && formData.slug ? () => window.open(`/blog/${formData.slug}`, "_blank") : undefined}
         isLoading={createMutation.isPending || updateMutation.isPending}
         showPreview={isEdit && !!formData.slug}
+        statusSlot={statusSlot}
       />
     </div>
   );

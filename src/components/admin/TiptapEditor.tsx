@@ -6,7 +6,7 @@ import Link from "@tiptap/extension-link";
 import Image from "@tiptap/extension-image";
 import { TextStyle } from "@tiptap/extension-text-style";
 import { Color } from "@tiptap/extension-color";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
@@ -48,6 +48,11 @@ interface TiptapEditorProps {
   description?: string;
 }
 
+const isEditorEmpty = (html: string) => {
+  const normalized = (html || "").replace(/\s/g, "").toLowerCase();
+  return !normalized || normalized === "<p></p>" || normalized === "<p><br></p>" || normalized === "<p><br/></p>";
+};
+
 export function TiptapEditor({
   value,
   onChange,
@@ -64,6 +69,12 @@ export function TiptapEditor({
   const [imageUrl, setImageUrl] = useState("");
   const [imageAlt, setImageAlt] = useState("");
   const [uploading, setUploading] = useState(false);
+  const onChangeRef = useRef(onChange);
+  const skipNextSync = useRef(false);
+
+  useEffect(() => {
+    onChangeRef.current = onChange;
+  }, [onChange]);
 
   const editor = useEditor({
     extensions: [
@@ -91,9 +102,10 @@ export function TiptapEditor({
       TextStyle,
       Color,
     ],
-    content: value,
-    onUpdate: ({ editor }) => {
-      onChange(editor.getHTML());
+    content: value || "",
+    onUpdate: ({ editor: ed }) => {
+      skipNextSync.current = true;
+      onChangeRef.current(ed.getHTML());
     },
     editorProps: {
       attributes: {
@@ -101,6 +113,20 @@ export function TiptapEditor({
       },
     },
   });
+
+  // Keep editor in sync when parent value changes externally (draft restore, load from API)
+  useEffect(() => {
+    if (!editor) return;
+    if (skipNextSync.current) {
+      skipNextSync.current = false;
+      return;
+    }
+    const current = editor.getHTML();
+    const incoming = value || "";
+    if (incoming === current) return;
+    if (isEditorEmpty(incoming) && isEditorEmpty(current)) return;
+    editor.commands.setContent(incoming, { emitUpdate: false });
+  }, [value, editor]);
 
   if (!editor) {
     return null;
