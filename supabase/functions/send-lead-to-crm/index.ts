@@ -27,6 +27,33 @@ interface LeadPayload {
   gbraid?: string | null;
 }
 
+type TrackingKey =
+  | "utm_source"
+  | "utm_medium"
+  | "utm_campaign"
+  | "utm_term"
+  | "utm_content"
+  | "gclid"
+  | "utm_platform"
+  | "utm_input"
+  | "gad_source"
+  | "gad_campaignid"
+  | "gbraid";
+
+const TRACKING_KEYS: TrackingKey[] = [
+  "utm_source",
+  "utm_medium",
+  "utm_campaign",
+  "utm_term",
+  "utm_content",
+  "gclid",
+  "utm_platform",
+  "utm_input",
+  "gad_source",
+  "gad_campaignid",
+  "gbraid",
+];
+
 const ORIGEM_VEICULO: Record<string, string> = {
   whatsapp_modal: "WhatsApp - Site Casteval",
   empreendimento_interesse_form: "Empreendimento - Site Casteval",
@@ -44,21 +71,87 @@ const buildEndpoint = () => {
   return { baseUrl, apiKey, endpoint: `${baseUrl}${leadPath}?key=${encodeURIComponent(apiKey)}` };
 };
 
-const appendUtmToMessage = (lead: LeadPayload, mensagemParts: string[]) => {
-  const trackingEntries = [
-    ["utm_source", lead.utm_source],
-    ["utm_medium", lead.utm_medium],
-    ["utm_campaign", lead.utm_campaign],
-    ["utm_term", lead.utm_term],
-    ["utm_content", lead.utm_content],
-    ["gclid", lead.gclid],
-    ["utm_platform", lead.utm_platform],
-    ["utm_input", lead.utm_input],
-    ["gad_source", lead.gad_source],
-    ["gad_campaignid", lead.gad_campaignid],
-    ["gbraid", lead.gbraid],
-  ].filter(([, value]) => value);
+const safeDecode = (value: string) => {
+  try {
+    return decodeURIComponent(value.replace(/\+/g, " "));
+  } catch {
+    return value;
+  }
+};
 
+const extractTrackingFromParams = (params: URLSearchParams): Partial<Record<TrackingKey, string>> => {
+  const out: Partial<Record<TrackingKey, string>> = {};
+  for (const key of TRACKING_KEYS) {
+    const value = params.get(key)?.trim();
+    if (value) out[key] = value;
+  }
+  return out;
+};
+
+const parseNestedTracking = (search: string): Partial<Record<TrackingKey, string>> => {
+  const raw = search.startsWith("?") ? search.slice(1) : search;
+  if (!raw) return {};
+
+  const candidates = new Set<string>();
+  for (const segment of raw.split("&")) {
+    if (!segment) continue;
+    candidates.add(segment);
+    candidates.add(safeDecode(segment));
+    const eq = segment.indexOf("=");
+    if (eq > 0) {
+      candidates.add(safeDecode(segment.slice(0, eq)));
+      candidates.add(safeDecode(segment.slice(eq + 1)));
+    }
+  }
+
+  let best: Partial<Record<TrackingKey, string>> = {};
+  for (const candidate of candidates) {
+    if (!/utm_source=|utm_medium=|utm_campaign=|gclid=/i.test(candidate)) continue;
+    const query = candidate.startsWith("?") ? candidate : `?${candidate}`;
+    const parsed = extractTrackingFromParams(new URLSearchParams(query));
+    best = { ...best, ...parsed };
+  }
+  return best;
+};
+
+const parseTrackingFromUrl = (urlOrHref?: string | null): Partial<Record<TrackingKey, string>> => {
+  if (!urlOrHref) return {};
+  try {
+    const url = new URL(urlOrHref);
+    const standard = extractTrackingFromParams(new URLSearchParams(url.search));
+    const nested = parseNestedTracking(url.search);
+    return { ...standard, ...nested };
+  } catch {
+    const q = urlOrHref.includes("?") ? urlOrHref.slice(urlOrHref.indexOf("?")) : "";
+    return {
+      ...extractTrackingFromParams(new URLSearchParams(q)),
+      ...parseNestedTracking(q),
+    };
+  }
+};
+
+const getTrackingEntries = (lead: LeadPayload) =>
+  TRACKING_KEYS
+    .map((key) => [key, lead[key]] as const)
+    .filter(([, value]) => Boolean(value && String(value).trim()));
+
+const hasTracking = (lead: LeadPayload) => getTrackingEntries(lead).length > 0;
+
+const formatAnuncio = (lead: LeadPayload) => {
+  const parts = [
+    lead.utm_source && `source=${lead.utm_source}`,
+    lead.utm_medium && `medium=${lead.utm_medium}`,
+    lead.utm_campaign && `campaign=${lead.utm_campaign}`,
+    lead.utm_term && `term=${lead.utm_term}`,
+    lead.utm_content && `content=${lead.utm_content}`,
+    lead.gclid && `gclid=${lead.gclid}`,
+  ].filter(Boolean);
+
+  return parts.join(" | ");
+};
+
+const appendUtmToMessage = (lead: LeadPayload, mensagemParts: string[]) => {
+  const trackingEntries = getTrackingEntries(lead);
   if (trackingEntries.length === 0) return;
 
   mensagemParts.push(
@@ -78,6 +171,11 @@ const formatFoneForVista = (phone?: string | null) => {
   return `${digits.slice(0, 2)} ${digits.slice(2, 7)}-${digits.slice(7, 11)}`;
 };
 
+/**
+ * A API Vista /lead só reconhece campos oficiais (nome, fone, email, mensagem,
+ * veiculo, anuncio, interesse...). Campos utm_* soltos são IGNORADOS.
+ * Por isso as tags vão em `anuncio` + `mensagem`.
+ */
 const buildLeadFields = (lead: LeadPayload) => {
   const mensagemParts = [lead.mensagem || ""];
   if (lead.url_origem) {
@@ -87,6 +185,7 @@ const buildLeadFields = (lead: LeadPayload) => {
 
   const origem = lead.origem || "site-casteval";
   const fone = formatFoneForVista(lead.telefone);
+  const anuncio = formatAnuncio(lead);
 
   const leadFields: Record<string, string> = {
     nome: lead.nome,
@@ -100,11 +199,10 @@ const buildLeadFields = (lead: LeadPayload) => {
     leadFields.fone = fone;
   }
 
-  if (lead.utm_source) leadFields.utm_source = lead.utm_source;
-  if (lead.utm_medium) leadFields.utm_medium = lead.utm_medium;
-  if (lead.utm_campaign) leadFields.utm_campaign = lead.utm_campaign;
-  if (lead.utm_term) leadFields.utm_term = lead.utm_term;
-  if (lead.utm_content) leadFields.utm_content = lead.utm_content;
+  // Campo oficial da Vista para origem/campanha do anúncio
+  if (anuncio) {
+    leadFields.anuncio = anuncio;
+  }
 
   return leadFields;
 };
@@ -112,6 +210,8 @@ const buildLeadFields = (lead: LeadPayload) => {
 const sendLeadToVista = async (endpoint: string, leadFields: ReturnType<typeof buildLeadFields>) => {
   const wrappedCadastro = { lead: leadFields };
   const formBody = `cadastro=${encodeURIComponent(JSON.stringify(wrappedCadastro))}`;
+
+  console.log("CRM lead fields:", JSON.stringify(leadFields));
 
   const formResponse = await fetch(endpoint, {
     method: "POST",
@@ -190,15 +290,29 @@ const updateContatoCrmStatus = async (
   }
 };
 
-const resolveContatoId = async (lead: LeadPayload): Promise<string | null> => {
-  if (lead.contato_id) return lead.contato_id;
-
+const resolveContato = async (lead: LeadPayload) => {
   const admin = getAdminClient();
-  if (!admin || !lead.email) return null;
+  if (!admin) return null;
+
+  if (lead.contato_id) {
+    const { data, error } = await admin
+      .from("st_contatos")
+      .select("id, utm_source, utm_medium, utm_campaign, utm_term, utm_content, url_origem")
+      .eq("id", lead.contato_id)
+      .maybeSingle();
+
+    if (error) {
+      console.error("Erro ao buscar contato por id:", error);
+      return null;
+    }
+    return data;
+  }
+
+  if (!lead.email) return null;
 
   let query = admin
     .from("st_contatos")
-    .select("id")
+    .select("id, utm_source, utm_medium, utm_campaign, utm_term, utm_content, url_origem")
     .eq("email", lead.email)
     .order("created_at", { ascending: false })
     .limit(1);
@@ -217,7 +331,44 @@ const resolveContatoId = async (lead: LeadPayload): Promise<string | null> => {
     return null;
   }
 
-  return data?.id ?? null;
+  return data;
+};
+
+/** Completa UTMs faltantes a partir do banco e da url_origem. */
+const enrichLeadTracking = (
+  lead: LeadPayload,
+  contato: {
+    utm_source?: string | null;
+    utm_medium?: string | null;
+    utm_campaign?: string | null;
+    utm_term?: string | null;
+    utm_content?: string | null;
+    url_origem?: string | null;
+  } | null,
+): LeadPayload => {
+  const enriched: LeadPayload = { ...lead };
+
+  if (contato) {
+    for (const key of ["utm_source", "utm_medium", "utm_campaign", "utm_term", "utm_content"] as const) {
+      if (!enriched[key] && contato[key]) {
+        enriched[key] = contato[key];
+      }
+    }
+    if (!enriched.url_origem && contato.url_origem) {
+      enriched.url_origem = contato.url_origem;
+    }
+  }
+
+  if (!hasTracking(enriched)) {
+    const fromUrl = parseTrackingFromUrl(enriched.url_origem);
+    for (const key of TRACKING_KEYS) {
+      if (!enriched[key] && fromUrl[key]) {
+        enriched[key] = fromUrl[key];
+      }
+    }
+  }
+
+  return enriched;
 };
 
 Deno.serve(async (req) => {
@@ -240,7 +391,10 @@ Deno.serve(async (req) => {
       throw new Error("Payload inválido: nome e email são obrigatórios");
     }
 
-    const contatoId = await resolveContatoId(lead);
+    const contato = await resolveContato(lead);
+    const contatoId = contato?.id ?? null;
+    lead = enrichLeadTracking(lead, contato);
+
     const { endpoint } = buildEndpoint();
     const leadFields = buildLeadFields(lead);
     const result = await sendLeadToVista(endpoint, leadFields);
@@ -275,6 +429,8 @@ Deno.serve(async (req) => {
         strategy: result.strategy,
         crm_response: result.rawBody,
         contato_id: contatoId,
+        tracking_sent: hasTracking(lead),
+        anuncio: leadFields.anuncio || null,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
@@ -282,9 +438,9 @@ Deno.serve(async (req) => {
     const message = error instanceof Error ? error.message : "Erro desconhecido";
 
     if (lead) {
-      const contatoId = await resolveContatoId(lead);
-      if (contatoId) {
-        await updateContatoCrmStatus(contatoId, "error", message);
+      const contato = await resolveContato(lead);
+      if (contato?.id) {
+        await updateContatoCrmStatus(contato.id, "error", message);
       }
     }
 

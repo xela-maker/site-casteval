@@ -47,16 +47,24 @@ const extractFromParams = (params: URLSearchParams): UtmParams => {
   return utm;
 };
 
-const hasStandardUtm = (utm: UtmParams) =>
-  UTM_PARAM_KEYS.some((key) => Boolean(utm[key]));
-
 const hasAnyTracking = (utm: UtmParams) =>
   ALL_TRACKING_KEYS.some((key) => Boolean(utm[key]));
+
+const mergeUtm = (...parts: UtmParams[]): UtmParams => {
+  const merged: UtmParams = {};
+  for (const part of parts) {
+    for (const key of ALL_TRACKING_KEYS) {
+      const value = part[key]?.trim();
+      if (value) merged[key] = value;
+    }
+  }
+  return merged;
+};
 
 /**
  * Alguns links do Google Ads chegam com as UTMs inteiras codificadas em um único
  * parâmetro, ex.: ?utm_source%3Dgoogle%26utm_medium%3Dcpc...
- * O URLSearchParams padrão não extrai utm_source nesse caso.
+ * Também comum: ?gclid=xxx&utm_source%3Dgoogle%26utm_medium%3Dcpc (gclid normal + UTM aninhada).
  */
 const parseNestedEncodedQuery = (search: string): UtmParams => {
   const raw = search.startsWith("?") ? search.slice(1) : search;
@@ -70,43 +78,68 @@ const parseNestedEncodedQuery = (search: string): UtmParams => {
     candidates.add(segment);
     candidates.add(safeDecodeURIComponent(segment));
 
+    // chave=valor onde a chave é a query inteira codificada
+    const eq = segment.indexOf("=");
+    if (eq > 0) {
+      const key = segment.slice(0, eq);
+      const val = segment.slice(eq + 1);
+      candidates.add(safeDecodeURIComponent(key));
+      candidates.add(safeDecodeURIComponent(val));
+    }
+
     if (segment.includes("%3D") || segment.includes("%26")) {
       candidates.add(safeDecodeURIComponent(segment));
     }
   }
 
-  // Remove sufixos de redirecionamento do Google (ex.: &ved=...)
   const withoutVed = raw.split(/&ved=/i)[0];
   candidates.add(withoutVed);
   candidates.add(safeDecodeURIComponent(withoutVed));
 
+  let best: UtmParams = {};
+
   for (const candidate of candidates) {
     const looksLikeTracking =
-      candidate.includes("utm_source=") ||
-      candidate.includes("gclid=") ||
-      candidate.includes("utm_medium=");
+      /utm_source=/i.test(candidate) ||
+      /utm_medium=/i.test(candidate) ||
+      /utm_campaign=/i.test(candidate) ||
+      /gclid=/i.test(candidate);
 
     if (!looksLikeTracking) continue;
 
     const query = candidate.startsWith("?") ? candidate : `?${candidate}`;
     const parsed = extractFromParams(new URLSearchParams(query));
     if (hasAnyTracking(parsed)) {
-      return parsed;
+      best = mergeUtm(best, parsed);
     }
   }
 
-  return {};
+  return best;
 };
 
 export const parseUtmFromSearch = (search: string): UtmParams => {
   if (!search) return {};
 
+  // Sempre mescla padrão + aninhado — links do Google Ads misturam os dois.
   const standard = extractFromParams(new URLSearchParams(search));
-  if (hasAnyTracking(standard)) {
-    return standard;
-  }
+  const nested = parseNestedEncodedQuery(search);
+  return mergeUtm(standard, nested);
+};
 
-  return parseNestedEncodedQuery(search);
+export const parseUtmFromUrl = (urlOrHref: string): UtmParams => {
+  if (!urlOrHref) return {};
+
+  try {
+    const url = new URL(urlOrHref, isBrowser() ? window.location.origin : "https://casteval.com.br");
+    const fromSearch = parseUtmFromSearch(url.search);
+    const fromHash = url.hash.includes("=")
+      ? parseUtmFromSearch(url.hash.replace(/^#/, "?").replace(/^\?/, "?"))
+      : {};
+    return mergeUtm(fromSearch, fromHash);
+  } catch {
+    const q = urlOrHref.includes("?") ? urlOrHref.slice(urlOrHref.indexOf("?")) : urlOrHref;
+    return parseUtmFromSearch(q);
+  }
 };
 
 export const hasUtmParams = (utm: UtmParams) => hasAnyTracking(utm);
@@ -115,8 +148,6 @@ export const hasUtmParams = (utm: UtmParams) => hasAnyTracking(utm);
  * Captura tags da URL e persiste no localStorage.
  * - Salva UTMs padrão e extras (gclid, gad_*, etc.)
  * - Faz merge: mantém tags já salvas e atualiza as que vierem na URL nova
- * - Assim, ao navegar sem query string, as tags da entrada continuam disponíveis
- *   para WhatsApp, empreendimento e formulário de contato.
  */
 export const captureUtmFromSearch = (search: string) => {
   if (!isBrowser()) return;
@@ -125,9 +156,22 @@ export const captureUtmFromSearch = (search: string) => {
   if (!hasAnyTracking(incoming)) return;
 
   const existing = getStoredUtmParams();
-  const merged: UtmParams = { ...existing, ...incoming };
+  const merged = mergeUtm(existing, incoming);
 
   localStorage.setItem(UTM_STORAGE_KEY, JSON.stringify(merged));
+};
+
+export const captureUtmFromLocation = () => {
+  if (!isBrowser()) return;
+
+  const fromHref = parseUtmFromUrl(window.location.href);
+  const fromSearch = parseUtmFromSearch(window.location.search);
+  const incoming = mergeUtm(fromSearch, fromHref);
+
+  if (!hasAnyTracking(incoming)) return;
+
+  const existing = getStoredUtmParams();
+  localStorage.setItem(UTM_STORAGE_KEY, JSON.stringify(mergeUtm(existing, incoming)));
 };
 
 export const getStoredUtmParams = (): UtmParams => {
@@ -163,6 +207,22 @@ export const formatUtmForMessage = (utm: UtmParams) => {
   return `\n\n--- Rastreamento UTM ---\n${lines.join("\n")}`;
 };
 
+/** Texto curto para o campo oficial `anuncio` da API Vista/Loft. */
+export const formatUtmForAnuncio = (utm: UtmParams) => {
+  if (!hasAnyTracking(utm)) return "";
+
+  const parts = [
+    utm.utm_source && `source=${utm.utm_source}`,
+    utm.utm_medium && `medium=${utm.utm_medium}`,
+    utm.utm_campaign && `campaign=${utm.utm_campaign}`,
+    utm.utm_term && `term=${utm.utm_term}`,
+    utm.utm_content && `content=${utm.utm_content}`,
+    utm.gclid && `gclid=${utm.gclid}`,
+  ].filter(Boolean);
+
+  return parts.join(" | ");
+};
+
 export const utmParamsToRecord = (utm: UtmParams) => ({
   utm_source: utm.utm_source || null,
   utm_medium: utm.utm_medium || null,
@@ -181,6 +241,9 @@ export const extraTrackingToPayload = (utm: UtmParams) => ({
 });
 
 export const getLeadTrackingFields = () => {
+  // Re-captura da URL atual caso o localStorage ainda esteja vazio.
+  captureUtmFromLocation();
+
   const utm = getStoredUtmParams();
   return {
     ...utmParamsToRecord(utm),
@@ -189,4 +252,7 @@ export const getLeadTrackingFields = () => {
 };
 
 /** Colunas UTM da tabela st_contatos (só as 5 padrão). */
-export const getLeadTrackingFieldsForDb = () => utmParamsToRecord(getStoredUtmParams());
+export const getLeadTrackingFieldsForDb = () => {
+  captureUtmFromLocation();
+  return utmParamsToRecord(getStoredUtmParams());
+};
