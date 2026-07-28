@@ -12,6 +12,7 @@ import { Mail, Phone, Calendar, MessageSquare, Search, Filter, X, CheckCircle2, 
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { sendLeadToCrm } from '@/lib/sendLeadToCrm';
+import { normalizePhoneDigits } from '@/lib/phoneUtils';
 import {
   Tooltip,
   TooltipContent,
@@ -1113,7 +1114,7 @@ export default function Contatos() {
                 
                 {selectedContato.telefone && (
                   <button
-                    onClick={() => window.open(`https://wa.me/55${selectedContato.telefone.replace(/\D/g, '')}`, '_blank')}
+                    onClick={() => window.open(`https://wa.me/55${normalizePhoneDigits(selectedContato.telefone)}`, '_blank')}
                     style={{
                       flex: '1 1 200px',
                       display: 'inline-flex',

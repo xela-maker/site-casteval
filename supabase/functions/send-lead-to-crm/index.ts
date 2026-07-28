@@ -160,8 +160,22 @@ const appendUtmToMessage = (lead: LeadPayload, mensagemParts: string[]) => {
   );
 };
 
+/**
+ * Remove o código do país (+55) quando o número chega completo. Só remove se
+ * sobrar um número nacional válido, para preservar o DDD 55 (Santa Maria/RS).
+ */
+const normalizePhoneDigits = (phone?: string | null) => {
+  let digits = (phone || "").replace(/\D/g, "");
+
+  if (digits.length > 11 && digits.startsWith("55")) {
+    digits = digits.slice(2);
+  }
+
+  return digits.slice(0, 11);
+};
+
 const formatFoneForVista = (phone?: string | null) => {
-  const digits = (phone || "").replace(/\D/g, "");
+  const digits = normalizePhoneDigits(phone);
   if (digits.length < 10) return "";
 
   if (digits.length === 10) {
