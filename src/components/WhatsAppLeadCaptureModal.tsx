@@ -68,7 +68,7 @@ export const WhatsAppLeadCaptureModal = () => {
       setFormData({
         name: parsed.name || "",
         email: parsed.email || "",
-        phone: parsed.phone || "",
+        phone: parsed.phone ? formatPhoneMask(parsed.phone) : "",
       });
     } catch {
       // Ignore invalid local storage payload.

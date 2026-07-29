@@ -1,10 +1,18 @@
 import { useConfig } from "./useConfig";
 import { requestWhatsAppLeadOpen } from "@/lib/whatsappLeadGate";
+import { getPhoneDigits } from "@/lib/phoneUtils";
+
+/** Monta número para wa.me: 55 + DDD + número (sem duplicar o 55). */
+const toWhatsAppE164 = (raw?: string | null) => {
+  const digits = getPhoneDigits(raw || "");
+  if (!digits) return "5541999999999";
+  return `55${digits}`;
+};
 
 export const useWhatsAppIntegration = () => {
   const { data: config } = useConfig();
 
-  const phoneNumber = config?.whatsapp_numero || "5541999999999";
+  const phoneNumber = toWhatsAppE164(config?.whatsapp_numero);
 
   const messages = {
     general: config?.whatsapp_mensagem_padrao || "Olá! Gostaria de conhecer mais sobre os empreendimentos da Casteval.",

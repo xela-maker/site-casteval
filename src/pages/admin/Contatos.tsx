@@ -12,7 +12,7 @@ import { Mail, Phone, Calendar, MessageSquare, Search, Filter, X, CheckCircle2, 
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { sendLeadToCrm } from '@/lib/sendLeadToCrm';
-import { normalizePhoneDigits } from '@/lib/phoneUtils';
+import { normalizePhoneDigits, formatPhoneMask } from '@/lib/phoneUtils';
 import {
   Tooltip,
   TooltipContent,
@@ -598,7 +598,7 @@ export default function Contatos() {
                       fontSize: '14px',
                       color: textMuted,
                     }}>
-                      {contato.telefone || '-'}
+                      {contato.telefone ? formatPhoneMask(contato.telefone) : '-'}
                     </td>
                     <td style={{
                       padding: '16px 20px',
@@ -828,7 +828,7 @@ export default function Contatos() {
                         onMouseEnter={(e) => e.currentTarget.style.opacity = '0.8'}
                         onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
                       >
-                        {selectedContato.telefone}
+                        {formatPhoneMask(selectedContato.telefone)}
                       </a>
                     </div>
                   )}

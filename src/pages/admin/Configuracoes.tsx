@@ -8,6 +8,7 @@ import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
 import { Building, Globe, Search, MessageCircle, Mail, AlertTriangle, Database, Code, Settings } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { formatPhoneMask, getPhoneDigits } from '@/lib/phoneUtils';
 
 interface ConfigData {
   nome_empresa: string;
@@ -131,17 +132,32 @@ export default function Configuracoes() {
   // Popular estado inicial quando os dados chegarem
   useEffect(() => {
     if (configsData && configsData.length > 0) {
-      const configMap: any = {};
-      configsData.forEach((item: any) => {
+      const configMap: Record<string, string | boolean> = {};
+      configsData.forEach((item: { key: string; value: string }) => {
         configMap[item.key] = item.value;
       });
-      setConfigs({ ...initialData, ...configMap });
+
+      const merged = { ...initialData, ...configMap } as ConfigData;
+      setConfigs({
+        ...merged,
+        telefone: formatPhoneMask(String(merged.telefone || "")),
+        whatsapp: formatPhoneMask(String(merged.whatsapp || "")),
+        whatsapp_numero: formatPhoneMask(String(merged.whatsapp_numero || "")),
+      });
     }
   }, [configsData]);
 
   const saveMutation = useMutation({
     mutationFn: async () => {
-      const entries = Object.entries(configs);
+      const toSave: ConfigData = {
+        ...configs,
+        telefone: formatPhoneMask(configs.telefone),
+        whatsapp: formatPhoneMask(configs.whatsapp),
+        // Guarda só DDD+número (sem 55) para o wa.me montar o 55 na hora do uso
+        whatsapp_numero: getPhoneDigits(configs.whatsapp_numero),
+      };
+
+      const entries = Object.entries(toSave);
       
       for (const [key, value] of entries) {
         const { error } = await supabase
@@ -235,16 +251,18 @@ export default function Configuracoes() {
               <div>
                 <Label>Telefone</Label>
                 <Input
+                  type="tel"
                   value={configs.telefone}
-                  onChange={(e) => setConfigs({ ...configs, telefone: e.target.value })}
-                  placeholder="(41) 3333-3333"
+                  onChange={(e) => setConfigs({ ...configs, telefone: formatPhoneMask(e.target.value) })}
+                  placeholder="(41) 3014-1122"
                 />
               </div>
               <div>
                 <Label>WhatsApp</Label>
                 <Input
+                  type="tel"
                   value={configs.whatsapp}
-                  onChange={(e) => setConfigs({ ...configs, whatsapp: e.target.value })}
+                  onChange={(e) => setConfigs({ ...configs, whatsapp: formatPhoneMask(e.target.value) })}
                   placeholder="(41) 99999-9999"
                 />
               </div>
@@ -523,12 +541,16 @@ export default function Configuracoes() {
               <div>
                 <Label>Número WhatsApp</Label>
                 <Input
+                  type="tel"
                   value={configs.whatsapp_numero}
-                  onChange={(e) => setConfigs({ ...configs, whatsapp_numero: e.target.value })}
-                  placeholder="5541999999999"
+                  onChange={(e) => setConfigs({
+                    ...configs,
+                    whatsapp_numero: formatPhoneMask(e.target.value),
+                  })}
+                  placeholder="(41) 99999-9999"
                 />
                 <p className="text-xs mt-1" style={{ color: 'hsl(var(--admin-muted))' }}>
-                  Formato internacional sem pontuação: 55 + DDD + número
+                  Digite com DDD, sem o 55. Ex: (41) 99999-9999
                 </p>
               </div>
               <div>

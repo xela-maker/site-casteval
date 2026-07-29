@@ -4,7 +4,7 @@ import { useConfig } from './useConfig';
 import { supabase } from '@/integrations/supabase/client';
 import { sendLeadToCrm } from '@/lib/sendLeadToCrm';
 import { getLeadTrackingFields, getLeadTrackingFieldsForDb } from '@/lib/utmTracking';
-import { getPhoneDigits } from '@/lib/phoneUtils';
+import { getPhoneDigits, isValidPhone } from '@/lib/phoneUtils';
 
 export const contactFormSchema = z.object({
   firstName: z.string()
@@ -21,8 +21,7 @@ export const contactFormSchema = z.object({
     .max(255, "Email deve ter no máximo 255 caracteres"),
   phone: z.string()
     .trim()
-    .min(10, "Telefone deve ter pelo menos 10 dígitos")
-    .max(15, "Telefone deve ter no máximo 15 dígitos"),
+    .refine((value) => isValidPhone(value), "Informe um telefone válido com DDD"),
   interest: z.string().optional(),
   message: z.string()
     .trim()

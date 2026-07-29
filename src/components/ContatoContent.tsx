@@ -12,6 +12,7 @@ import contatoHero from "@/assets/contato-hero.png";
 import { useConfig } from "@/hooks/useConfig";
 import { useWhatsAppIntegration } from "@/hooks/useWhatsAppIntegration";
 import { trackWhatsAppClick } from "@/utils/analytics";
+import { formatPhoneMask } from "@/lib/phoneUtils";
 
 export const ContatoContent = () => {
   const { toast } = useToast();
@@ -29,11 +30,12 @@ export const ContatoContent = () => {
   const [isSuccess, setIsSuccess] = useState(false);
 
   const handleInputChange = (field: keyof ContactFormData, value: string) => {
+    const nextValue = field === "phone" ? formatPhoneMask(value) : value;
     setFormData(prev => ({
       ...prev,
-      [field]: value
+      [field]: nextValue
     }));
-    validateField(field, value);
+    validateField(field, nextValue);
   };
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

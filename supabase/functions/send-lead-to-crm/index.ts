@@ -161,14 +161,44 @@ const appendUtmToMessage = (lead: LeadPayload, mensagemParts: string[]) => {
 };
 
 /**
- * Remove o código do país (+55) quando o número chega completo. Só remove se
- * sobrar um número nacional válido, para preservar o DDD 55 (Santa Maria/RS).
+ * Remove o código do país (+55) e devolve só DDD + número (máx. 11 dígitos).
+ *
+ * Casos cobertos:
+ * - 5541999887766 (13) → 41999887766
+ * - 554199988776 (12) → 4199988776
+ * - 55469937876 (11, 55 era país + DDD 46) → 469937876
+ * - 55999123456 (11, DDD 55 real de Santa Maria + 9...) → mantém
  */
-const normalizePhoneDigits = (phone?: string | null) => {
-  let digits = (phone || "").replace(/\D/g, "");
+const VALID_DDDS = new Set([
+  "11", "12", "13", "14", "15", "16", "17", "18", "19",
+  "21", "22", "24", "27", "28",
+  "31", "32", "33", "34", "35", "37", "38",
+  "41", "42", "43", "44", "45", "46",
+  "47", "48", "49",
+  "51", "53", "54", "55",
+  "61", "62", "63", "64", "65", "66", "67", "68", "69",
+  "71", "73", "74", "75", "77", "79",
+  "81", "82", "83", "84", "85", "86", "87", "88", "89",
+  "91", "92", "93", "94", "95", "96", "97", "98", "99",
+]);
 
-  if (digits.length > 11 && digits.startsWith("55")) {
+const normalizePhoneDigits = (phone?: string | null) => {
+  let digits = (phone || "").replace(/\D/g, "").slice(0, 15);
+
+  while (digits.startsWith("0") && digits.length > 11) {
+    digits = digits.slice(1);
+  }
+
+  while (digits.length > 11 && digits.startsWith("55")) {
     digits = digits.slice(2);
+  }
+
+  if (digits.length === 11 && digits.startsWith("55")) {
+    const maybeDdd = digits.slice(2, 4);
+    const thirdDigit = digits[2];
+    if (thirdDigit !== "9" && VALID_DDDS.has(maybeDdd)) {
+      digits = digits.slice(2);
+    }
   }
 
   return digits.slice(0, 11);
