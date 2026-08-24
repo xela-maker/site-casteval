@@ -1,11 +1,12 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Clock, MessageCircle, Send, CheckCircle, MapPin } from "lucide-react";
+import { Clock, MessageCircle, Send, MapPin } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useFormValidation, ContactFormData } from "@/hooks/useFormValidation";
 import contatoHero from "@/assets/contato-hero.png";
@@ -15,6 +16,7 @@ import { trackWhatsAppClick } from "@/utils/analytics";
 import { formatPhoneMask } from "@/lib/phoneUtils";
 
 export const ContatoContent = () => {
+  const navigate = useNavigate();
   const { toast } = useToast();
   const { errors, isSubmitting, validateField, submitForm } = useFormValidation();
   const { data: config } = useConfig();
@@ -27,7 +29,6 @@ export const ContatoContent = () => {
     interest: "",
     message: ""
   });
-  const [isSuccess, setIsSuccess] = useState(false);
 
   const handleInputChange = (field: keyof ContactFormData, value: string) => {
     const nextValue = field === "phone" ? formatPhoneMask(value) : value;
@@ -41,22 +42,7 @@ export const ContatoContent = () => {
     e.preventDefault();
     const success = await submitForm(formData);
     if (success) {
-      setIsSuccess(true);
-      toast({
-        title: "Mensagem enviada!",
-        description: "Você será redirecionado para o WhatsApp para finalizar o contato."
-      });
-      setTimeout(() => {
-        setIsSuccess(false);
-        setFormData({
-          firstName: "",
-          lastName: "",
-          email: "",
-          phone: "",
-          interest: "",
-          message: ""
-        });
-      }, 3000);
+      navigate("/obrigado");
     } else {
       toast({
         title: "Erro ao enviar",
@@ -314,29 +300,7 @@ export const ContatoContent = () => {
                       Preencha o formulário abaixo e entraremos em contato em breve
                     </p>
 
-                    {isSuccess ? <div style={{
-                    background: "#F8F8F8",
-                    padding: 14,
-                    borderRadius: 8,
-                    textAlign: "center"
-                  }}>
-                        <CheckCircle className="w-16 h-16 text-success mx-auto mb-4" />
-                        <h2 style={{
-                      fontSize: 22,
-                      fontWeight: 700,
-                      margin: 0,
-                      marginBottom: 6,
-                      color: "#222"
-                    }}>
-                          Mensagem enviada com sucesso!
-                        </h2>
-                        <p style={{
-                      color: "#666",
-                      margin: 0
-                    }}>
-                          Você será redirecionado para o WhatsApp para continuarmos a conversa.
-                        </p>
-                      </div> : <form onSubmit={handleSubmit} className="space-y-6">
+                    <form onSubmit={handleSubmit} className="space-y-6">
                         <div className="grid mobile:grid-cols-1 desktop:grid-cols-2 gap-4">
                           <div>
                             <Label className="text-body-s font-medium text-ink-700 mb-2 block">Nome *</Label>
@@ -395,7 +359,7 @@ export const ContatoContent = () => {
                               ENVIAR MENSAGEM
                             </>}
                         </Button>
-                      </form>}
+                        </form>
                   </div>
                 </TabsContent>
 

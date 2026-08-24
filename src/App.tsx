@@ -22,6 +22,7 @@ import SobreNos from "./pages/SobreNos";
 import Blog from "./pages/Blog";
 import BlogPost from "./pages/BlogPost";
 import Contato from "./pages/Contato";
+import Obrigado from "./pages/Obrigado";
 import Login from "./pages/auth/Login";
 import Signup from "./pages/auth/Signup";
 import PasswordReset from "./pages/auth/PasswordReset";
@@ -79,6 +80,7 @@ const App = () => (
               <Route path="/blog" element={<Blog />} />
               <Route path="/blog/:slug" element={<BlogPost />} />
               <Route path="/contato" element={<Contato />} />
+              <Route path="/obrigado" element={<Obrigado />} />
               
               {/* Auth Routes */}
               <Route path="/auth/login" element={<Login />} />

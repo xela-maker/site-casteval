@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { z } from 'zod';
-import { useConfig } from './useConfig';
 import { supabase } from '@/integrations/supabase/client';
 import { sendLeadToCrm } from '@/lib/sendLeadToCrm';
 import { getLeadTrackingFields, getLeadTrackingFieldsForDb } from '@/lib/utmTracking';
@@ -34,7 +33,6 @@ export type ContactFormData = z.infer<typeof contactFormSchema>;
 export const useFormValidation = () => {
   const [errors, setErrors] = useState<Partial<Record<keyof ContactFormData, string>>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { data: config } = useConfig();
 
   const validateField = (name: keyof ContactFormData, value: string) => {
     try {
@@ -118,19 +116,6 @@ export const useFormValidation = () => {
         ...crmTracking,
       });
 
-      const message = `🏢 Nova mensagem de contato - Casteval
-      
-👤 Nome: ${fullName}
-📧 Email: ${data.email}
-📞 Telefone: ${data.phone}
-🎯 Interesse: ${data.interest || 'Não especificado'}
-
-💬 Mensagem:
-${data.message}`;
-
-      const phoneNumber = config?.whatsapp_numero || "5541999999999";
-      window.open(`https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`, '_blank');
-      
       return true;
     } catch (error) {
       console.error('Error submitting form:', error);
