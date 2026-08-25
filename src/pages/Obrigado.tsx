@@ -1,11 +1,13 @@
 import { Link } from "react-router-dom";
-import { CheckCircle, MessageCircle } from "lucide-react";
+import { FaWhatsapp } from "react-icons/fa";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { SEOHead } from "@/components/SEOHead";
 import { Button } from "@/components/ui/button";
 import { useConfig } from "@/hooks/useConfig";
 import { getPhoneDigits } from "@/lib/phoneUtils";
+import contatoHero from "@/assets/contato-hero.png";
+import familiaCta from "@/assets/familia-cta.jpg";
 
 const toWhatsAppE164 = (raw?: string | null) => {
   const digits = getPhoneDigits(raw || "");
@@ -54,64 +56,71 @@ export default function Obrigado() {
         canonical="https://casteval.com.br/obrigado"
       />
       <Header />
-      <main>
-        {/* Hero confirmation */}
-        <section className="relative bg-[#F6F7F8] pt-24 pb-16 md:pb-20 px-5">
-          <div className="mx-auto max-w-[1200px] grid gap-10 lg:grid-cols-[1.15fr_0.85fr] lg:items-end">
-            <div className="max-w-2xl">
-              <div className="mb-6 inline-flex items-center gap-2 rounded-pill bg-white px-4 py-2 shadow-sm border border-line-100">
-                <CheckCircle className="h-5 w-5 text-success" aria-hidden />
-                <span className="text-caption font-semibold tracking-button text-ink-700 uppercase">
-                  Mensagem recebida
-                </span>
-              </div>
-              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tighter leading-[1.05] text-ink-900 mb-5">
-                Sua mensagem chegou.
-              </h1>
-              <p className="text-body-l text-ink-500 leading-relaxed max-w-[40ch]">
-                Um consultor da Casteval vai falar com você em breve.
-              </p>
-              <div className="mt-8">
-                <Button asChild variant="outline" size="pill">
-                  <Link to="/">Voltar ao início</Link>
-                </Button>
-              </div>
-            </div>
 
-            <div className="rounded-xl bg-secondary text-white p-8 md:p-10 shadow-lg">
-              <p className="text-body-l leading-relaxed text-white/90">
-                Você deu o primeiro passo para encontrar o lar certo para a sua
-                família. Com mais de 60 anos construindo Curitiba, a Casteval
-                está aqui para tornar esse processo tranquilo, transparente e
-                sem surpresas - do primeiro contato até a entrega das chaves.
-              </p>
+      <main>
+        {/* Hero — ritmo do Contato */}
+        <section className="relative isolate overflow-hidden bg-black text-white text-center pt-[116px] pb-[80px] px-16 desktop:px-24">
+          <div
+            className="absolute inset-0 bg-cover bg-center opacity-80 pointer-events-none"
+            style={{ backgroundImage: `url(${contatoHero})` }}
+            aria-hidden
+          />
+          <div className="relative z-10 container mx-auto max-w-container">
+            <h1 className="text-display font-bold text-white mb-[10px] leading-tight">
+              Sua mensagem chegou.
+            </h1>
+            <p className="text-body-l text-white/95 max-w-[760px] mx-auto mb-32">
+              Um consultor da Casteval vai falar com você em breve.
+            </p>
+            {/* mobile: coluna full-width; desktop: row — mobile: no projeto = max-width 599 */}
+            <div className="flex flex-col desktop:flex-row gap-16 justify-center items-stretch desktop:items-center w-full max-w-[360px] desktop:max-w-none mx-auto">
+              <Button
+                type="button"
+                onClick={openWhatsApp}
+                className="w-full desktop:w-auto bg-brand-gold hover:bg-brand-gold-700 text-black font-semibold text-body-s tracking-button shadow-card-rest hover:shadow-card-hover px-32 py-12 rounded-pill transition-smooth"
+              >
+                <FaWhatsapp className="h-16 w-16" aria-hidden />
+                Falar no WhatsApp
+              </Button>
+              <Button
+                asChild
+                variant="outline"
+                className="w-full desktop:w-auto border-white text-white hover:bg-white hover:text-black font-semibold text-body-s tracking-button px-32 py-12 rounded-pill transition-smooth"
+              >
+                <Link to="/">Voltar ao início</Link>
+              </Button>
             </div>
           </div>
         </section>
 
-        {/* Próximos passos */}
-        <section className="bg-surface-0 py-16 md:py-24 px-5">
-          <div className="mx-auto max-w-[1200px]">
-            <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-ink-900 mb-12 max-w-[20ch]">
+        {/* Conteúdo — bloco claro do Contato */}
+        <section className="bg-surface-50 py-64 px-16 desktop:px-24">
+          <div className="container mx-auto max-w-container">
+            <p className="text-body-l text-ink-700 leading-relaxed max-w-[65ch] mb-48">
+              Você deu o primeiro passo para encontrar o lar certo para a sua
+              família. Com mais de 60 anos construindo Curitiba, a Casteval
+              está aqui para tornar esse processo tranquilo, transparente e sem
+              surpresas, do primeiro contato até a entrega das chaves.
+            </p>
+
+            <h2 className="text-h2 font-bold text-ink-900 mb-32">
               Próximos Passos
             </h2>
 
-            <ol className="grid gap-0 border-t border-line-100">
-              {STEPS.map((step, index) => (
+            <ol className="border-t border-line-100">
+              {STEPS.map((step) => (
                 <li
                   key={step.n}
-                  className={`grid gap-4 md:grid-cols-[88px_1fr] md:gap-10 py-8 md:py-10 border-b border-line-100 ${
-                    index === 1 ? "md:pl-16" : index === 2 ? "md:pl-8" : ""
-                  }`}
+                  className="grid grid-cols-1 desktop:grid-cols-[80px_1fr] gap-12 desktop:gap-24 py-24 border-b border-line-100"
                 >
-                  <span className="text-3xl md:text-4xl font-bold text-brand-gold tracking-tighter leading-none">
+                  <span className="text-h3 font-bold text-brand-gold leading-none">
                     {step.n}
                   </span>
-                  <div className="max-w-[54ch]">
-                    <h3 className="text-xl md:text-2xl font-bold text-ink-900 mb-2">
+                  <div className="max-w-[52ch]">
+                    <h3 className="text-h4 font-bold text-ink-900 mb-8">
                       {step.title}
                     </h3>
-                    <p className="text-body-l text-ink-500 leading-relaxed">
+                    <p className="text-body-l text-ink-600 leading-relaxed">
                       {step.body}
                     </p>
                   </div>
@@ -121,49 +130,70 @@ export default function Obrigado() {
           </div>
         </section>
 
-        {/* Depoimento */}
-        <section className="bg-secondary text-white py-16 md:py-24 px-5">
-          <div className="mx-auto max-w-[900px] text-center">
-            <h2 className="text-2xl md:text-3xl font-bold tracking-tight mb-10">
-              Você Vai Gostar do Que Vem Por Aí
-            </h2>
-            <blockquote className="text-lg md:text-xl leading-relaxed text-white/90 font-medium">
-              “Achar um imóvel estava sendo tão desgastante que entrar em
-              contato direto com a Casteval foi uma última tentativa. O
-              processo foi tão rápido que ainda nem absorvi a ideia, mas se eu
-              soubesse que seria tão tranquilo, teria sido minha primeira
-              opção. É muito satisfatório ser bem atendido.”
-            </blockquote>
-            <p className="mt-8 text-body-s font-semibold tracking-button uppercase text-brand-gold">
-              O atendimento virou parte fundamental da experiência de compra.
-            </p>
+        {/* Depoimento — ritmo FamilySection */}
+        <section className="mobile:py-20 tablet:py-32 desktop:py-48 bg-surface-0">
+          <div className="container mx-auto max-w-container px-16 desktop:px-24">
+            <div className="grid grid-cols-1 desktop:grid-cols-2 gap-32 desktop:gap-48 items-center">
+              <div className="relative">
+                <img
+                  src={familiaCta}
+                  alt="Família em um lar Casteval"
+                  className="w-full h-[300px] tablet:h-[400px] desktop:h-[600px] object-cover rounded-card shadow-card-rest"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent rounded-card" />
+              </div>
+
+              <div>
+                <h2 className="text-h2 font-bold text-ink-900 mb-24 leading-snug">
+                  Você Vai Gostar do Que Vem Por Aí
+                </h2>
+                <p className="text-body-l text-ink-700 mb-24 leading-relaxed max-w-[52ch]">
+                  “Achar um imóvel estava sendo tão desgastante que entrar em
+                  contato direto com a Casteval foi uma última tentativa. O
+                  processo foi tão rápido que ainda nem absorvi a ideia, mas se
+                  eu soubesse que seria tão tranquilo, teria sido minha primeira
+                  opção. É muito satisfatório ser bem atendido.”
+                </p>
+                <p className="text-body-l text-ink-600 leading-relaxed max-w-[52ch]">
+                  O atendimento virou parte fundamental da experiência de compra.
+                </p>
+              </div>
+            </div>
           </div>
         </section>
 
-        {/* CTA WhatsApp */}
-        <section className="bg-[#F6F7F8] py-16 md:py-20 px-5">
-          <div className="mx-auto max-w-[720px] text-center">
-            <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-ink-900 mb-4">
+        {/* CTA — ritmo SelectCTABanner */}
+        <section className="relative py-72 mobile:py-48 overflow-hidden">
+          <div className="absolute inset-0 bg-brand-charcoal" aria-hidden />
+          <div
+            className="absolute inset-0 opacity-40 pointer-events-none"
+            style={{
+              background:
+                "radial-gradient(ellipse 70% 55% at 75% 35%, hsl(45 81% 49% / 0.28), transparent 62%)",
+            }}
+            aria-hidden
+          />
+          <div className="relative z-10 container mx-auto max-w-container px-16 desktop:px-24 text-center">
+            <h2 className="text-h2 font-bold text-white mb-24">
               Fale Agora pelo WhatsApp
             </h2>
-            <p className="text-body-l text-ink-500 mb-8 max-w-[42ch] mx-auto">
+            <p className="text-body-l text-white/85 mb-32 max-w-[600px] mx-auto">
               Prefere falar agora? Nossa equipe está pronta para continuar o
               atendimento pelo WhatsApp.
             </p>
             <Button
               type="button"
-              size="lg"
               onClick={openWhatsApp}
-              className="bg-[#25D366] hover:bg-[#1ebe57] text-white shadow-md hover:shadow-lg active:scale-[0.98]"
+              className="w-full max-w-[360px] desktop:w-auto bg-[#25D366] hover:bg-[#1ebe57] text-white font-semibold text-body-s tracking-button shadow-card-rest hover:shadow-card-hover px-32 py-12 rounded-pill transition-smooth"
             >
-              <MessageCircle className="h-5 w-5" aria-hidden />
-              FALAR NO WHATSAPP
+              <FaWhatsapp className="h-16 w-16" aria-hidden />
+              Falar no WhatsApp
             </Button>
-            <p className="mt-10 text-body-s text-ink-500">
+            <p className="text-body-s text-white/60 mt-32 break-words px-8">
               Alguma dúvida? Fale com nosso suporte:{" "}
               <a
                 href="mailto:contato@casteval.com.br"
-                className="font-semibold text-ink-900 underline-offset-4 hover:underline"
+                className="font-semibold text-brand-gold hover:underline underline-offset-4"
               >
                 contato@casteval.com.br
               </a>
@@ -171,6 +201,7 @@ export default function Obrigado() {
           </div>
         </section>
       </main>
+
       <Footer />
     </div>
   );

@@ -1,12 +1,11 @@
 import { useState, useEffect } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { WhatsAppFAB } from "@/components/WhatsAppFAB";
 import { SEOHead } from "@/components/SEOHead";
 import { LazyImage } from "@/components/LazyImage";
 import { EmpreendimentoDetailsSkeleton } from "@/components/EmpreendimentoDetailsSkeleton";
-import { useWhatsAppIntegration } from "@/hooks/useWhatsAppIntegration";
 import { useEmpreendimento } from "@/hooks/useEmpreendimentos";
 import { useItensLazerWithIcons } from "@/hooks/useItensLazerWithIcons";
 import { createEmpreendimentoSchema } from "@/lib/structuredData";
@@ -552,6 +551,7 @@ function ResidenciasCarousel({ casas, empreendimento }: any) {
 }
 
 export default function EmpreendimentoDetalhes() {
+  const navigate = useNavigate();
   const { slug } = useParams<{
     slug: string;
   }>();
@@ -572,7 +572,6 @@ export default function EmpreendimentoDetalhes() {
   const [currentInfoIndex, setCurrentInfoIndex] = useState(0);
   const amenidadeIds = result?.amenidades || [];
   const { data: itensLazerWithIcons = [] } = useItensLazerWithIcons(amenidadeIds);
-  const { phoneNumber, messages } = useWhatsAppIntegration();
 
   const handleInterestSubmit = async () => {
     const nome = interestFormData.nome.trim();
@@ -680,23 +679,6 @@ export default function EmpreendimentoDetalhes() {
       ...crmTracking,
     });
 
-    const waMessage = `${messages.property(empreendimentoNome)}\n\nNome: ${nome}\nE-mail: ${email}\nTelefone: ${formatPhoneMask(interestFormData.telefone)}\nMensagem: ${mensagem}`;
-    window.open(`https://wa.me/${phoneNumber}?text=${encodeURIComponent(waMessage)}`, "_blank");
-
-    await Swal.fire({
-      icon: "success",
-      title: "Solicitacao enviada!",
-      text: "Recebemos seu interesse. Vamos continuar seu atendimento no WhatsApp.",
-      confirmButtonText: "Entendi",
-      background: "#0F0F0F",
-      color: "#FFFFFF",
-      iconColor: "#F5B321",
-      confirmButtonColor: "#F5B321",
-      customClass: {
-        popup: "rounded-none",
-      },
-    });
-
     setInterestFormData({
       nome: "",
       email: "",
@@ -704,6 +686,8 @@ export default function EmpreendimentoDetalhes() {
       mensagem: "",
       consentimento: false,
     });
+
+    navigate("/obrigado");
   };
 
   // auto-slide somente em telas menores - SEMPRE chamar hooks antes dos early returns
