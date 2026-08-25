@@ -18,9 +18,9 @@ const Index = () => {
   return (
     <div className="min-h-screen">
       <SEOHead 
-        title="Casteval - Sofisticação e Exclusividade em Empreendimentos | Curitiba e São Paulo"
-        description="Descubra empreendimentos exclusivos da Casteval. Arquitetura autoral, localizações nobres e atendimento personalizado. Casteval Select e Business em Curitiba e São Paulo."
-        keywords="casteval, empreendimentos curitiba, imóveis são paulo, casteval select, casteval business, arquitetura autoral, exclusividade, sofisticação, apartamentos de luxo"
+        title="Casteval - Sofisticação e Exclusividade em Empreendimentos | Curitiba"
+        description="Descubra empreendimentos exclusivos da Casteval. Arquitetura autoral, localizações nobres e atendimento personalizado. Casteval Select e Business em Curitiba."
+        keywords="casteval, empreendimentos curitiba, imóveis curitiba, casteval select, casteval business, arquitetura autoral, exclusividade, sofisticação, apartamentos de luxo"
         structuredData={createOrganizationSchema()}
       />
       <Header />

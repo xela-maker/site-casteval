@@ -37,7 +37,7 @@ export const SEOHead = ({
   const finalKeywords =
     keywords ||
     config?.site_keywords_default ||
-    "casteval, empreendimentos, imóveis, curitiba, são paulo, casteval select, casteval business, arquitetura, exclusividade, sofisticação";
+    "casteval, empreendimentos, imóveis, curitiba, casteval select, casteval business, arquitetura, exclusividade, sofisticação";
 
   const finalAuthor = config?.site_author_default || "Casteval";
 
